@@ -19,7 +19,7 @@ const AddEmployee = () => {
     "Administration",
     "Finance",
     "Marketing",
-    "Design",
+    "Venue Operations",
     "Production",
     "Human Resources",
   ];
@@ -32,6 +32,7 @@ const AddEmployee = () => {
     "Marketing Executive",
     "HR Officer",
     "Production Supervisor",
+    "Attendant",
   ];
 
   const handleChange = (e) => {
