@@ -13,7 +13,7 @@ const Actors = () => {
   useEffect(() => {
     const fetchActors = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/actors"); // Update API if needed
+        const res = await axios.get("https://fanaka-server-1.onrender.com/api/actors"); // Update API if needed
         setActors(res.data);
         setLoading(false);
       } catch (error) {
@@ -92,7 +92,7 @@ const Actors = () => {
   async function handleDelete(id) {
     if (window.confirm("Are you sure you want to delete this actor?")) {
       try {
-        await axios.delete(`http://localhost:5000/api/actors/${id}`);
+        await axios.delete(`https://fanaka-server-1.onrender.com/api/actors/${id}`);
         setActors(prev => prev.filter(actor => actor._id !== id));
       } catch (error) {
         console.error("Error deleting actor:", error);

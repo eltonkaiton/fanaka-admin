@@ -43,9 +43,9 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const [usersRes, employeesRes, bookingsRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/users"),
-          axios.get("http://localhost:5000/api/employees"),
-          axios.get("http://localhost:5000/api/bookings"),
+          axios.get("https://fanaka-server-1.onrender.com/api/users"),
+          axios.get("https://fanaka-server-1.onrender.com/api/employees"),
+          axios.get("https://fanaka-server-1.onrender.com/api/bookings"),
         ]);
         setUsers(usersRes.data);
         setEmployees(employeesRes.data);
@@ -115,7 +115,7 @@ const Dashboard = () => {
   const updateBookingStatus = async (bookingId, status) => {
     try {
       setUpdatingStatus(true);
-      await axios.put(`http://localhost:5000/api/bookings/${bookingId}`, { paymentStatus: status });
+      await axios.put(`https://fanaka-server-1.onrender.com/api/bookings/${bookingId}`, { paymentStatus: status });
       setBookings(prev => prev.map(b => b._id === bookingId || b.id === bookingId ? { ...b, paymentStatus: status } : b));
       alert(`Booking ${status} successfully!`);
       setShowBookingModal(false);
@@ -137,7 +137,7 @@ const Dashboard = () => {
     
     try {
       setDeletingBookingId(bookingToDelete._id || bookingToDelete.id);
-      await axios.delete(`http://localhost:5000/api/bookings/${bookingToDelete._id || bookingToDelete.id}`);
+      await axios.delete(`https://fanaka-server-1.onrender.com/api/bookings/${bookingToDelete._id || bookingToDelete.id}`);
       
       // Remove the deleted booking from state
       setBookings(prev => prev.filter(b => 

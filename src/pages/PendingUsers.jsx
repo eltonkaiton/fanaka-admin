@@ -11,7 +11,7 @@ const PendingUsers = () => {
   // Fetch pending users
   const fetchPendingUsers = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/users");
+      const response = await fetch("https://fanaka-server-1.onrender.com/api/users");
       if (!response.ok) throw new Error("Failed to fetch users");
 
       const data = await response.json();
@@ -32,7 +32,7 @@ const PendingUsers = () => {
   // Handle status update
   const updateUserStatus = async (id, status) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${id}`, {
+      const response = await fetch(`https://fanaka-server-1.onrender.com/api/users/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),

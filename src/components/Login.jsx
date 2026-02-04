@@ -30,7 +30,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/admin/login",
+        "https://fanaka-server-1.onrender.com/api/admin/login",
         credentials,
         {
           headers: {

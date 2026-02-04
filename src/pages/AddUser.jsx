@@ -28,7 +28,7 @@ const AddUser = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/users", {
+      const response = await fetch("https://fanaka-server-1.onrender.com/api/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
