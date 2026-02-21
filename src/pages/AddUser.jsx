@@ -28,7 +28,8 @@ const AddUser = () => {
     setLoading(true);
 
     try {
-      const response = await fetch("https://fanaka-server-1.onrender.com/api/users", {
+      // Updated endpoint to match backend
+      const response = await fetch("http://localhost:5000/api/users/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -37,11 +38,12 @@ const AddUser = () => {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to add user");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to add user");
       }
 
       const data = await response.json();
-      alert(`User added successfully: ${data.username}`);
+      alert(`User added successfully: ${data.user.username}`);
 
       // Reset form
       setFormData({
@@ -58,7 +60,7 @@ const AddUser = () => {
 
     } catch (error) {
       console.error("Error adding user:", error);
-      alert("Failed to add user. Please try again.");
+      alert(`Failed to add user: ${error.message}`);
     } finally {
       setLoading(false);
     }
@@ -159,7 +161,7 @@ const AddUser = () => {
                   <option value="Admin">Admin</option>
                   <option value="Manager">Manager</option>
                   <option value="Employee">Employee</option>
-                  <option value="Viewer">Viewer</option>
+                  <option value="Audience">Audience</option>
                 </select>
               </div>
             </div>

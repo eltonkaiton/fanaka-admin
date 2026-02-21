@@ -1,4 +1,4 @@
-// src/components/PendingUsers.jsx
+// src/pages/PendingUsers.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -11,8 +11,11 @@ const PendingUsers = () => {
   // Fetch pending users
   const fetchPendingUsers = async () => {
     try {
-      const response = await fetch("https://fanaka-server-1.onrender.com/api/users");
-      if (!response.ok) throw new Error("Failed to fetch users");
+      const response = await fetch("http://localhost:5000/api/users");
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch users");
+      }
 
       const data = await response.json();
       const pending = data.filter(user => user.status === "Pending");
@@ -29,31 +32,39 @@ const PendingUsers = () => {
     fetchPendingUsers();
   }, []);
 
-  // Handle status update
+  // Update user status (Approve / Reject) — calls unprotected endpoint
   const updateUserStatus = async (id, status) => {
     try {
-      const response = await fetch(`https://fanaka-server-1.onrender.com/api/users/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
+      const response = await fetch(
+        `http://localhost:5000/api/users/${id}/status`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ status }),
+        }
+      );
 
-      if (!response.ok) throw new Error("Failed to update status");
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to update status");
+      }
 
       alert(`User status updated to ${status}`);
-      fetchPendingUsers(); // refresh list
+      fetchPendingUsers();
     } catch (error) {
       console.error("Error updating user status:", error);
-      alert("Failed to update user status");
+      alert(error.message);
     }
   };
 
-  // Filter users by search term
-  const filteredUsers = pendingUsers.filter(
-    user =>
-      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filter users based on search
+  const filteredUsers = pendingUsers.filter(user =>
+    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -71,7 +82,7 @@ const PendingUsers = () => {
           className="form-control"
           placeholder="Search by username, full name, or email..."
           value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
@@ -94,7 +105,7 @@ const PendingUsers = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map(user => (
+              {filteredUsers.map((user) => (
                 <tr key={user._id}>
                   <td>{user.username}</td>
                   <td>{user.fullName}</td>

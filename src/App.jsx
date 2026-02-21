@@ -26,28 +26,26 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
 // Footer Component
-const Footer = () => {
-  return (
-    <footer
-      style={{
-        backgroundColor: "#222",
-        color: "#fff",
-        textAlign: "center",
-        padding: "12px 0",
-        position: "fixed",
-        width: "100%",
-        bottom: 0,
-        zIndex: 1000,
-      }}
-    >
-      &copy; {new Date().getFullYear()} Forge Reactor. All rights reserved.
-    </footer>
-  );
-};
+const Footer = () => (
+  <footer
+    style={{
+      backgroundColor: "#222",
+      color: "#fff",
+      textAlign: "center",
+      padding: "12px 0",
+      position: "fixed",
+      width: "100%",
+      bottom: 0,
+      zIndex: 1000,
+    }}
+  >
+    &copy; {new Date().getFullYear()} Forge Reactor. All rights reserved.
+  </footer>
+);
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem("adminToken");
+  const token = localStorage.getItem("token"); // ✅ Matches Login.jsx
   if (!token) {
     return <Navigate to="/login" replace />;
   }

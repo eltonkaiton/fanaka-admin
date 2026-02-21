@@ -30,7 +30,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        "https://fanaka-server-1.onrender.com/api/admin/login",
+        "http://localhost:5000/api/admin/login",
         credentials,
         {
           headers: {
@@ -42,7 +42,7 @@ const Login = () => {
       const { token, admin } = response.data;
 
       // Save token in localStorage for authentication
-      localStorage.setItem("adminToken", token);
+      localStorage.setItem("token", token);
       localStorage.setItem("adminName", admin.fullName);
       
       // Save email if remember me is checked

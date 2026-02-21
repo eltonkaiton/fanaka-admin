@@ -1,4 +1,4 @@
-// src/components/ActiveUsers.jsx
+// src/pages/ActiveUsers.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -11,7 +11,7 @@ const ActiveUsers = () => {
   // Fetch active users
   const fetchActiveUsers = async () => {
     try {
-      const response = await fetch("https://fanaka-server-1.onrender.com/api/users");
+      const response = await fetch("http://localhost:5000/api/users");
       if (!response.ok) throw new Error("Failed to fetch users");
 
       const data = await response.json();
@@ -29,41 +29,43 @@ const ActiveUsers = () => {
     fetchActiveUsers();
   }, []);
 
-  // Handle status update (suspend)
+  // Suspend user — no token required
   const suspendUser = async (id) => {
     try {
-      const response = await fetch(`https://fanaka-server-1.onrender.com/api/users/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/users/${id}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "Suspended" }),
       });
 
-      if (!response.ok) throw new Error("Failed to suspend user");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to suspend user");
 
       alert("User has been suspended");
-      fetchActiveUsers(); // refresh list
+      fetchActiveUsers();
     } catch (error) {
       console.error("Error suspending user:", error);
-      alert("Failed to suspend user");
+      alert(error.message);
     }
   };
 
-  // Handle delete user
+  // Delete user — no token required
   const deleteUser = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
 
     try {
-      const response = await fetch(`https://fanaka-server-1.onrender.com/api/users/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/users/${id}`, {
         method: "DELETE",
       });
 
-      if (!response.ok) throw new Error("Failed to delete user");
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to delete user");
 
       alert("User has been deleted");
-      fetchActiveUsers(); // refresh list
+      fetchActiveUsers();
     } catch (error) {
       console.error("Error deleting user:", error);
-      alert("Failed to delete user");
+      alert(error.message);
     }
   };
 
