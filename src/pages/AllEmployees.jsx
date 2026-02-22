@@ -10,7 +10,7 @@ const Employees = () => {
   // Fetch all employees
   const fetchEmployees = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/employees");
+      const res = await fetch("https://fanaka-server-1.onrender.com/api/employees");
       if (!res.ok) throw new Error("Failed to fetch employees");
 
       const data = await res.json();
@@ -35,7 +35,7 @@ const Employees = () => {
     if (!confirmDelete) return;
 
     try {
-      const res = await fetch(`http://localhost:5000
+      const res = await fetch(`https://fanaka-server-1.onrender.com
 /api/employees/${id}`, {
         method: "DELETE",
       });
