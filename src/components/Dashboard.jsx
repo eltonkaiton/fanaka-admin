@@ -129,10 +129,10 @@ const Dashboard = () => {
     const fetchData = async () => {
       try {
         const [usersRes, employeesRes, bookingsRes, ordersRes] = await Promise.all([
-          axios.get("https://fanaka-server-1.onrender.com/api/users"),
-          axios.get("https://fanaka-server-1.onrender.com/api/employees"),
-          axios.get("https://fanaka-server-1.onrender.com/api/bookings"),
-          axios.get("https://fanaka-server-1.onrender.com/api/orders"),
+          axios.get("http://localhost:5000/api/users"),
+          axios.get("http://localhost:5000/api/employees"),
+          axios.get("http://localhost:5000/api/bookings"),
+          axios.get("http://localhost:5000/api/orders"),
         ]);
         setUsers(usersRes.data);
         setEmployees(employeesRes.data);
@@ -149,7 +149,7 @@ const Dashboard = () => {
 
   const fetchPlays = async () => {
     try {
-      const response = await axios.get("https://fanaka-server-1.onrender.com/api/plays");
+      const response = await axios.get("http://localhost:5000/api/plays");
       setPlays(response.data);
     } catch (error) {
       console.error("Error fetching plays:", error);
@@ -158,7 +158,7 @@ const Dashboard = () => {
 
   const fetchActors = async () => {
     try {
-      const response = await axios.get("https://fanaka-server-1.onrender.com/api/actors");
+      const response = await axios.get("http://localhost:5000/api/actors");
       setActors(response.data);
     } catch (error) {
       console.error("Error fetching actors:", error);
@@ -167,7 +167,7 @@ const Dashboard = () => {
 
   const fetchMaterialStats = async () => {
     try {
-      const response = await axios.get("https://fanaka-server-1.onrender.com/api/plays/materials/stats");
+      const response = await axios.get("http://localhost:5000/api/plays/materials/stats");
       setMaterialStats(response.data);
     } catch (error) {
       console.error("Error fetching material stats:", error);
@@ -263,7 +263,7 @@ const Dashboard = () => {
   const fetchItems = async () => {
     try {
       setFetchingItems(true);
-      const response = await axios.get("https://fanaka-server-1.onrender.com/api/items");
+      const response = await axios.get("http://localhost:5000/api/items");
       setItems(response.data);
     } catch (error) {
       console.error("Error fetching items:", error);
@@ -275,7 +275,7 @@ const Dashboard = () => {
   const fetchSuppliers = async () => {
     try {
       setFetchingSuppliers(true);
-      const response = await axios.get("https://fanaka-server-1.onrender.com/api/employees?role=Supplier");
+      const response = await axios.get("http://localhost:5000/api/employees?role=Supplier");
       setSuppliers(response.data);
     } catch (error) {
       console.error("Error fetching suppliers:", error);
@@ -293,7 +293,7 @@ const Dashboard = () => {
         unitPrice: parseFloat(newOrder.unitPrice)
       };
       
-      const response = await axios.post("https://fanaka-server-1.onrender.com/api/orders", orderData);
+      const response = await axios.post("http://localhost:5000/api/orders", orderData);
       
       if (response.data.success) {
         alert("Order created successfully!");
@@ -331,7 +331,7 @@ const Dashboard = () => {
         formData.append("image", selectedFile);
       }
 
-      const response = await axios.post("https://fanaka-server-1.onrender.com/api/plays", formData, {
+      const response = await axios.post("http://localhost:5000/api/plays", formData, {
         headers: {
           "Content-Type": "multipart/form-data"
         }
@@ -360,23 +360,23 @@ const Dashboard = () => {
   const updateOrderStatus = async (orderId, status) => {
     try {
       setUpdatingOrderStatus(true);
-      let endpoint = `https://fanaka-server-1.onrender.com/api/orders/${orderId}`;
+      let endpoint = `http://localhost:5000/api/orders/${orderId}`;
       
       switch(status) {
         case 'approve':
-          endpoint = `https://fanaka-server-1.onrender.com/api/orders/${orderId}/approve`;
+          endpoint = `http://localhost:5000/api/orders/${orderId}/approve`;
           break;
         case 'deliver':
-          endpoint = `https://fanaka-server-1.onrender.com/api/orders/${orderId}/deliver`;
+          endpoint = `http://localhost:5000/api/orders/${orderId}/deliver`;
           break;
         case 'receive':
-          endpoint = `https://fanaka-server-1.onrender.com/api/orders/${orderId}/receive`;
+          endpoint = `http://localhost:5000/api/orders/${orderId}/receive`;
           break;
         case 'reject':
-          endpoint = `https://fanaka-server-1.onrender.com/api/orders/${orderId}/reject`;
+          endpoint = `http://localhost:5000/api/orders/${orderId}/reject`;
           break;
         default:
-          endpoint = `https://fanaka-server-1.onrender.com/api/orders/${orderId}`;
+          endpoint = `http://localhost:5000/api/orders/${orderId}`;
       }
       
       const response = await axios.put(endpoint, {
@@ -398,7 +398,7 @@ const Dashboard = () => {
   const updatePlayStatus = async (playId, status) => {
     try {
       setUpdatingPlayStatus(true);
-      const response = await axios.put(`https://fanaka-server-1.onrender.com/api/plays/${playId}`, { status });
+      const response = await axios.put(`http://localhost:5000/api/plays/${playId}`, { status });
       
       setPlays(prev => prev.map(p => p._id === playId ? response.data : p));
       alert(`Play ${status}d successfully!`);
@@ -414,7 +414,7 @@ const Dashboard = () => {
   const updateMaterialRequestStatus = async (playId, requestId, status) => {
     try {
       setUpdatingPlayStatus(true);
-      const endpoint = `https://fanaka-server-1.onrender.com/api/plays/${playId}/material-requests/${requestId}/${status}`;
+      const endpoint = `http://localhost:5000/api/plays/${playId}/material-requests/${requestId}/${status}`;
       const response = await axios.patch(endpoint);
       
       // Refresh plays data
@@ -432,7 +432,7 @@ const Dashboard = () => {
   const handleProcessPayment = async (orderId) => {
     try {
       setUpdatingOrderStatus(true);
-      const response = await axios.put(`https://fanaka-server-1.onrender.com/api/orders/${orderId}/process-payment`, paymentData);
+      const response = await axios.put(`http://localhost:5000/api/orders/${orderId}/process-payment`, paymentData);
       
       setOrders(prev => prev.map(o => o._id === orderId ? response.data.order : o));
       alert("Payment processed successfully!");
@@ -451,7 +451,7 @@ const Dashboard = () => {
     
     try {
       setDeletingOrderId(orderToDelete._id);
-      await axios.delete(`https://fanaka-server-1.onrender.com/api/orders/${orderToDelete._id}`);
+      await axios.delete(`http://localhost:5000/api/orders/${orderToDelete._id}`);
       
       setOrders(prev => prev.filter(o => o._id !== orderToDelete._id));
       alert("Order deleted successfully!");
@@ -470,7 +470,7 @@ const Dashboard = () => {
     
     try {
       setDeletingPlayId(playToDelete._id);
-      await axios.delete(`https://fanaka-server-1.onrender.com/api/plays/${playToDelete._id}`);
+      await axios.delete(`http://localhost:5000/api/plays/${playToDelete._id}`);
       
       setPlays(prev => prev.filter(p => p._id !== playToDelete._id));
       alert("Play deleted successfully!");
@@ -608,7 +608,7 @@ const Dashboard = () => {
   const updateBookingStatus = async (bookingId, status) => {
     try {
       setUpdatingStatus(true);
-      await axios.put(`https://fanaka-server-1.onrender.com/api/bookings/${bookingId}`, { paymentStatus: status });
+      await axios.put(`http://localhost:5000/api/bookings/${bookingId}`, { paymentStatus: status });
       setBookings(prev => prev.map(b => b._id === bookingId || b.id === bookingId ? { ...b, paymentStatus: status } : b));
       alert(`Booking ${status} successfully!`);
       setShowBookingModal(false);
@@ -630,7 +630,7 @@ const Dashboard = () => {
     
     try {
       setDeletingBookingId(bookingToDelete._id || bookingToDelete.id);
-      await axios.delete(`https://fanaka-server-1.onrender.com/api/bookings/${bookingToDelete._id || bookingToDelete.id}`);
+      await axios.delete(`http://localhost:5000/api/bookings/${bookingToDelete._id || bookingToDelete.id}`);
       
       setBookings(prev => prev.filter(b => 
         (b._id !== bookingToDelete._id) && (b.id !== bookingToDelete.id)
@@ -1459,7 +1459,7 @@ const Dashboard = () => {
                       <tr key={play._id}>
                         <td>
                           {play.image ? (
-                            <img src={`https://fanaka-server-1.onrender.com${play.image}`} alt={play.title} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px' }} />
+                            <img src={`http://localhost:5000${play.image}`} alt={play.title} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px' }} />
                           ) : (
                             <div style={{ width: '50px', height: '50px', backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '5px' }}>🎭</div>
                           )}
@@ -1523,7 +1523,7 @@ const Dashboard = () => {
                       <div className="row">
                         <div className="col-md-4">
                           {selectedPlay.image ? (
-                            <img src={`https://fanaka-server-1.onrender.com${selectedPlay.image}`} alt={selectedPlay.title} style={{ width: '100%', borderRadius: '10px' }} />
+                            <img src={`http://localhost:5000${selectedPlay.image}`} alt={selectedPlay.title} style={{ width: '100%', borderRadius: '10px' }} />
                           ) : (
                             <div style={{ width: '100%', height: '150px', backgroundColor: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px' }}>🎭 No Image</div>
                           )}

@@ -18,7 +18,7 @@ const EditActor = () => {
   useEffect(() => {
     const fetchActor = async () => {
       try {
-        const res = await axios.get(`https://fanaka-server-1.onrender.com/api/actors/${id}`);
+        const res = await axios.get(`http://localhost:5000/api/actors/${id}`);
         setActor(res.data);
       } catch (err) {
         console.error(err);
@@ -36,7 +36,7 @@ const EditActor = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.put(`https://fanaka-server-1.onrender.com/api/actors/${id}`, actor);
+      await axios.put(`http://localhost:5000/api/actors/${id}`, actor);
       setLoading(false);
       navigate("/actors"); // redirect to actors list
     } catch (err) {
