@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { io } from "socket.io-client";
 
-const API_BASE_URL = "http://localhost:5000";
-const SOCKET_URL = "http://localhost:5000";
+const API_BASE_URL = "https://fanaka-server-1.onrender.com";
+const SOCKET_URL = "https://fanaka-server-1.onrender.com";
 
 // Allowed employees
 const ALLOWED_DEPARTMENTS = ["administration", "finance"];

@@ -12,7 +12,7 @@ import {
   IoBusinessOutline
 }from'react-icons/io5';
 
-const API_BASE='http://localhost:5000';
+const API_BASE='https://fanaka-server-1.onrender.com';
 
 export default function InventoryHome(){
   const navigate=useNavigate();

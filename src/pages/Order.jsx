@@ -22,7 +22,7 @@ import {
   IoReceiptOutline,
 } from 'react-icons/io5';
 
-const API = 'http://localhost:5000';
+const API = 'https://fanaka-server-1.onrender.com';
 
 // ----- Constants -----
 const STATUS_COLORS = {

@@ -11,7 +11,7 @@ import {
   FaTheaterMasks
 } from "react-icons/fa";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = "https://fanaka-server-1.onrender.com";
 
 function ActorHome({ actorId }) {
 
