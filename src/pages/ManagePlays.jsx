@@ -247,7 +247,8 @@ export default function ManagePlays() {
                     <button
                       style={styles.assignButton}
                       onClick={() =>
-                        navigate("/assign-actors", { state: { playId: play._id, playTitle: play.title } })
+                        // ✅ FIXED: add "/play-manager/" prefix to match nested route
+                        navigate("/play-manager/assign-actors", { state: { playId: play._id, playTitle: play.title } })
                       }
                     >
                       Assign
@@ -346,7 +347,7 @@ export default function ManagePlays() {
   );
 }
 
-// Inline styles
+// Inline styles (unchanged)
 const styles = {
   container: {
     backgroundColor: "#f8f9fa",

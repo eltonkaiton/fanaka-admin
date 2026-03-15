@@ -89,7 +89,7 @@ const AudienceSidebar = () => {
   );
 };
 
-// PLAY MANAGER SIDEBAR
+// PLAY MANAGER SIDEBAR (FIXED: now all links include /play-manager/)
 const PlayManagerSidebar = () => {
   const handleLogout = () => {
     localStorage.clear();
@@ -99,10 +99,10 @@ const PlayManagerSidebar = () => {
     <div className="d-flex flex-column p-3 bg-light" style={{ width: "220px", minHeight: "100vh" }}>
       <h5>Play Manager</h5>
       <Link to="/play-manager" className="btn btn-link">Dashboard</Link>
-      <Link to="/manager-bookings" className="btn btn-link">Manage Bookings</Link>
-      <Link to="/manage-plays" className="btn btn-link">Manage Plays</Link>
-      <Link to="/create-play" className="btn btn-link">Create Play</Link>
-      <Link to="/assign-actors" className="btn btn-link">Assign Actors</Link>
+      <Link to="/play-manager/manager-bookings" className="btn btn-link">Manage Bookings</Link>
+      <Link to="/play-manager/manage-plays" className="btn btn-link">Manage Plays</Link>
+      <Link to="/play-manager/create-play" className="btn btn-link">Create Play</Link>
+      <Link to="/play-manager/assign-actors" className="btn btn-link">Assign Actors</Link>
       <button className="btn btn-danger mt-auto" onClick={handleLogout}>Logout</button>
     </div>
   );

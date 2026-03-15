@@ -1,4 +1,3 @@
-// src/pages/AssignActors.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -37,6 +36,10 @@ export default function AssignActors() {
     } else {
       setSelectedActors([...selectedActors, actorId]);
     }
+  };
+
+  const handleRoleChange = (actorId, role) => {
+    setActorRoles({ ...actorRoles, [actorId]: role });
   };
 
   const handleAssignActors = async () => {
@@ -95,9 +98,8 @@ export default function AssignActors() {
                   className="form-control mt-2"
                   placeholder="Role in this play"
                   value={actorRoles[actor._id] || ""}
-                  onChange={(e) =>
-                    setActorRoles({ ...actorRoles, [actor._id]: e.target.value })
-                  }
+                  onClick={(e) => e.stopPropagation()} // ✅ Prevents parent click
+                  onChange={(e) => handleRoleChange(actor._id, e.target.value)}
                 />
               )}
             </div>

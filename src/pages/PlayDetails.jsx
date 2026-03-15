@@ -7,7 +7,7 @@ import {
   IoTimeOutline,
   IoPeopleOutline,
   IoInformationCircleOutline,
-  IoFilmOutline,
+  IoFilmOutline,        // used instead of IoTheater
   IoClose,
   IoPerson,
   IoMail,
@@ -779,7 +779,7 @@ export default function PlayDetails() {
       fontSize: "16px",
       color: "#666",
     },
-    priceValue: {
+    priceValueRow: {
       fontSize: "16px",
       color: "#333",
       fontWeight: "600",
@@ -954,7 +954,7 @@ export default function PlayDetails() {
   if (!play) {
     return (
       <div style={styles.centered}>
-        <IoTheater size={60} color="#666" />
+        <IoFilmOutline size={60} color="#666" />   {/* replaced IoTheater */}
         <p style={styles.noDataText}>Play not found</p>
         <button style={styles.retryButton} onClick={() => navigate(-1)}>
           Go Back
@@ -971,7 +971,7 @@ export default function PlayDetails() {
           <img src={imageUrl} alt={play.title} style={styles.image} />
         ) : (
           <>
-            <IoTheater size={60} color="#666" />
+            <IoFilmOutline size={60} color="#666" />   {/* replaced IoTheater */}
             <p style={styles.noImageText}>No Image Available</p>
           </>
         )}
@@ -1084,7 +1084,7 @@ export default function PlayDetails() {
             onClick={handleBookTicket}
             disabled={isPastEvent}
           >
-            <IoTheater size={24} />
+            <IoFilmOutline size={24} />   {/* replaced IoTheater */}
             <span>{isPastEvent ? "Event Ended" : "Book Tickets"}</span>
           </button>
           {isPastEvent && <p style={styles.bookingNote}>This event has already taken place</p>}
@@ -1243,11 +1243,11 @@ export default function PlayDetails() {
               <div style={styles.priceSummary}>
                 <div style={styles.priceRow}>
                   <span style={styles.priceLabel}>Ticket Price</span>
-                  <span style={styles.priceValue}>KES {getTicketPrice(selectedTicketType)}</span>
+                  <span style={styles.priceValueRow}>KES {getTicketPrice(selectedTicketType)}</span>
                 </div>
                 <div style={styles.priceRow}>
                   <span style={styles.priceLabel}>Quantity</span>
-                  <span style={styles.priceValue}>× {quantity}</span>
+                  <span style={styles.priceValueRow}>× {quantity}</span>
                 </div>
                 <div style={styles.divider} />
                 <div style={{ ...styles.priceRow, ...styles.totalRow }}>
