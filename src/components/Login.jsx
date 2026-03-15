@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const Login = () => {
@@ -308,7 +308,7 @@ const Login = () => {
 
                   <div className="text-center">
                     <p className="text-muted mb-0">
-                      New here? <a href="/register" className="text-primary text-decoration-none fw-semibold">Create an account</a>
+                      New here? <Link to="/register" className="text-primary text-decoration-none fw-semibold">Create an account</Link>
                     </p>
                   </div>
 
