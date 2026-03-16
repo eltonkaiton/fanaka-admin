@@ -57,6 +57,11 @@ import AddActor from "./pages/AddActor";
 import EditActor from "./pages/EditActor";
 // ======================================
 
+// ===== EMPLOYEE CHAT PAGES =====
+import EmployeeInbox from "./pages/EmployeeInbox";
+import EmployeeChat from "./pages/EmployeeChat";
+// ================================
+
 // PROTECTED ROUTE
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -171,6 +176,10 @@ function App() {
           <Route path="/inventory-orders" element={<ProtectedRoute><InventoryOrders /></ProtectedRoute>} />
           <Route path="/supplier-home" element={<ProtectedRoute><SupplierHome /></ProtectedRoute>} />
           <Route path="/usher" element={<ProtectedRoute><Usher /></ProtectedRoute>} />
+
+          {/* ===== EMPLOYEE CHAT PAGES ===== */}
+          <Route path="/employee-inbox" element={<ProtectedRoute><EmployeeInbox /></ProtectedRoute>} />
+          <Route path="/employee-chat" element={<ProtectedRoute><EmployeeChat /></ProtectedRoute>} />
 
           {/* ===== ROUTES FROM FIRST FILE ===== */}
           {/* Dashboard (already has a route at "/") */}

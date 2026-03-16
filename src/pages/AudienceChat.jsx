@@ -5,9 +5,9 @@ import { io } from "socket.io-client";
 const API_BASE_URL = "https://fanaka-server-1.onrender.com";
 const SOCKET_URL = "https://fanaka-server-1.onrender.com";
 
-// Allowed employees
-const ALLOWED_DEPARTMENTS = ["administration", "finance"];
-const ALLOWED_POSITIONS = ["attendant"];
+// Allowed employees – now only finance and venue operation
+const ALLOWED_DEPARTMENTS = ["finance", "venue operation"];
+const ALLOWED_POSITIONS = [];
 
 const AudienceChat = () => {
   const [customerId, setCustomerId] = useState(localStorage.getItem("customerId"));
@@ -152,7 +152,14 @@ const AudienceChat = () => {
       borderBottom: "1px solid #ddd",
     },
     backButton: { background: "none", border: "none", fontSize: 20, cursor: "pointer" },
-    messagesContainer: { flexGrow: 1, padding: 15, overflowY: "auto", backgroundColor: "#f2f2f2" },
+    messagesContainer: {
+      flexGrow: 1,
+      padding: 15,
+      overflowY: "auto",
+      backgroundColor: "#f2f2f2",
+      display: "flex",
+      flexDirection: "column",  // <-- ADDED: makes alignSelf work
+    },
     messageBubble: {
       maxWidth: "70%",
       padding: 10,
