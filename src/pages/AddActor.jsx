@@ -15,7 +15,19 @@ const AddActor = () => {
     status: "Active",
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [toasts, setToasts] = useState([]);
+
+  const showToast = (message, type = "info", duration = 3000) => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, duration);
+  };
+
+  const removeToast = (id) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  };
 
   const handleChange = (e) => {
     setActor({ ...actor, [e.target.name]: e.target.value });
@@ -26,19 +38,49 @@ const AddActor = () => {
     setLoading(true);
     try {
       await axios.post("https://fanaka-server-1.onrender.com/api/actors", actor);
+      showToast("Actor added successfully!", "success");
       setLoading(false);
-      navigate("/actors"); // redirect to actors list
+      setTimeout(() => navigate("/actors"), 1500); // Delay to show toast
     } catch (err) {
       console.error(err);
-      setError("Failed to add actor. Please check the details and try again.");
+      showToast(
+        err.response?.data?.message ||
+          "Failed to add actor. Please check the details and try again.",
+        "error"
+      );
       setLoading(false);
     }
   };
 
+  const ToastContainer = () => (
+    <div style={styles.toastContainer}>
+      {toasts.map((toast) => (
+        <div
+          key={toast.id}
+          style={{
+            ...styles.toast,
+            ...(toast.type === "success" && styles.toastSuccess),
+            ...(toast.type === "error" && styles.toastError),
+            ...(toast.type === "warning" && styles.toastWarning),
+            ...(toast.type === "info" && styles.toastInfo),
+          }}
+        >
+          <span>{toast.message}</span>
+          <button
+            onClick={() => removeToast(toast.id)}
+            style={styles.toastClose}
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div className="container mt-4">
+      <ToastContainer />
       <h2>Add New Actor</h2>
-      {error && <div className="alert alert-danger">{error}</div>}
 
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
@@ -133,12 +175,90 @@ const AddActor = () => {
           </select>
         </div>
 
-        <button className="btn btn-primary" type="submit" disabled={loading}>
-          {loading ? "Adding..." : "Add Actor"}
-        </button>
+        <div className="d-flex gap-2">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => navigate("/actors")}
+          >
+            Cancel
+          </button>
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={loading}
+          >
+            {loading ? "Adding..." : "Add Actor"}
+          </button>
+        </div>
       </form>
     </div>
   );
 };
+
+// Inline styles for toast (can also use a separate CSS file)
+const styles = {
+  toastContainer: {
+    position: "fixed",
+    top: 20,
+    right: 20,
+    zIndex: 2000,
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  toast: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    minWidth: "250px",
+    maxWidth: "400px",
+    padding: "12px 16px",
+    borderRadius: "8px",
+    color: "#fff",
+    fontSize: "14px",
+    fontWeight: "500",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    animation: "slideIn 0.3s ease",
+  },
+  toastSuccess: {
+    backgroundColor: "#4CAF50",
+  },
+  toastError: {
+    backgroundColor: "#F44336",
+  },
+  toastWarning: {
+    backgroundColor: "#FF9800",
+  },
+  toastInfo: {
+    backgroundColor: "#2196F3",
+  },
+  toastClose: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    marginLeft: "12px",
+    padding: 0,
+    color: "#fff",
+    fontSize: "18px",
+    lineHeight: 1,
+  },
+};
+
+// Add keyframes for toast animation
+const styleSheet = document.createElement("style");
+styleSheet.innerText = `
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+`;
+document.head.appendChild(styleSheet);
 
 export default AddActor;

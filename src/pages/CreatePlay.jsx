@@ -8,7 +8,7 @@ export default function CreatePlay() {
   // Form fields
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]); // YYYY-MM-DD
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [venue, setVenue] = useState("");
   const [regularPrice, setRegularPrice] = useState("");
   const [vipPrice, setVipPrice] = useState("");
@@ -19,8 +19,22 @@ export default function CreatePlay() {
   // UI states
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [toasts, setToasts] = useState([]);
 
-  // Cleanup image preview on unmount
+  // Toast functions
+  const showToast = (message, type = "info", duration = 3000) => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, duration);
+  };
+
+  const removeToast = (id) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  };
+
+  // Cleanup image preview
   useEffect(() => {
     return () => {
       if (imagePreview) URL.revokeObjectURL(imagePreview);
@@ -69,7 +83,7 @@ export default function CreatePlay() {
   // Submit form
   const handleSubmit = async () => {
     if (!validateForm()) {
-      alert("Please fix all errors before submitting.");
+      showToast("Please fix all errors before submitting.", "warning");
       return;
     }
 
@@ -96,7 +110,7 @@ export default function CreatePlay() {
       });
 
       if (response.status === 201 || response.status === 200) {
-        alert("Play created successfully!");
+        showToast("Play created successfully!", "success");
         // Clear form
         setTitle("");
         setDescription("");
@@ -108,8 +122,8 @@ export default function CreatePlay() {
         setImageFile(null);
         setImagePreview("");
         setErrors({});
-        // Navigate back to play manager dashboard
-        navigate("/play-manager");
+        // Navigate after a short delay to show toast
+        setTimeout(() => navigate("/play-manager"), 1500);
       }
     } catch (error) {
       console.error("Create Play Error:", error);
@@ -119,7 +133,7 @@ export default function CreatePlay() {
       } else if (error.message.includes("timeout")) {
         errorMessage = "Request timeout. Check your connection.";
       }
-      alert(errorMessage);
+      showToast(errorMessage, "error");
     } finally {
       setLoading(false);
     }
@@ -132,7 +146,33 @@ export default function CreatePlay() {
     return isNaN(num) ? value : num.toLocaleString("en-KE");
   };
 
-  // Inline styles (kept similar to React Native version)
+  // Toast Container Component
+  const ToastContainer = () => (
+    <div style={styles.toastContainer}>
+      {toasts.map((toast) => (
+        <div
+          key={toast.id}
+          style={{
+            ...styles.toast,
+            ...(toast.type === "success" && styles.toastSuccess),
+            ...(toast.type === "error" && styles.toastError),
+            ...(toast.type === "warning" && styles.toastWarning),
+            ...(toast.type === "info" && styles.toastInfo),
+          }}
+        >
+          <span>{toast.message}</span>
+          <button
+            onClick={() => removeToast(toast.id)}
+            style={styles.toastClose}
+          >
+            ✕
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+
+  // Inline styles (including toast styles)
   const styles = {
     container: {
       maxWidth: "800px",
@@ -140,6 +180,7 @@ export default function CreatePlay() {
       padding: "20px",
       backgroundColor: "#f8f9fa",
       fontFamily: "system-ui, -apple-system, sans-serif",
+      position: "relative",
     },
     header: {
       marginBottom: "25px",
@@ -387,10 +428,72 @@ export default function CreatePlay() {
     hiddenFileInput: {
       display: "none",
     },
+    // Toast styles
+    toastContainer: {
+      position: "fixed",
+      top: 20,
+      right: 20,
+      zIndex: 2000,
+      display: "flex",
+      flexDirection: "column",
+      gap: "10px",
+    },
+    toast: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      minWidth: "250px",
+      maxWidth: "400px",
+      padding: "12px 16px",
+      borderRadius: "8px",
+      color: "#fff",
+      fontSize: "14px",
+      fontWeight: "500",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      animation: "slideIn 0.3s ease",
+    },
+    toastSuccess: {
+      backgroundColor: "#4CAF50",
+    },
+    toastError: {
+      backgroundColor: "#F44336",
+    },
+    toastWarning: {
+      backgroundColor: "#FF9800",
+    },
+    toastInfo: {
+      backgroundColor: "#2196F3",
+    },
+    toastClose: {
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      marginLeft: "12px",
+      padding: 0,
+      color: "#fff",
+      fontSize: "18px",
+      lineHeight: 1,
+    },
   };
+
+  // Add keyframes animation
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.innerHTML = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   return (
     <div style={styles.container}>
+      <ToastContainer />
       <div style={styles.header}>
         <h1 style={styles.title}>Create New Play</h1>
         <p style={styles.subtitle}>Fill in play details and pricing</p>

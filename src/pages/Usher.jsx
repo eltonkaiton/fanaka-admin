@@ -1,47 +1,58 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
+// src/pages/Usher.js
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   IoFilterOutline,
   IoChatbubbleEllipsesOutline,
   IoLogOutOutline,
   IoQrCodeOutline,
   IoCheckmarkCircleOutline,
-  IoEnterOutline,
   IoClose,
   IoAppsOutline,
-  IoCheckmarkCircleOutline as IoCheckmarkCircleOutline2,
   IoTimeOutline,
-  IoEnterOutline as IoEnterOutline2,
-  IoLogOutOutline as IoLogOutOutline2,
+  IoEnterOutline,
   IoCloseCircleOutline,
   IoEllipsisHorizontal,
   IoArrowBack,
   IoCalendarOutline,
-  IoTimeOutline as IoTimeOutline2,
   IoMailOutline,
   IoCallOutline,
   IoCheckmarkDoneCircle,
-} from "react-icons/io5";
-
-const API_BASE_URL = "https://fanaka-server-1.onrender.com";
+  IoWarningOutline
+} from 'react-icons/io5';
 
 export default function Usher() {
   const navigate = useNavigate();
-
-  const [bookingRef, setBookingRef] = useState("");
+  const [bookingRef, setBookingRef] = useState('');
   const [bookingData, setBookingData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [todayBookings, setTodayBookings] = useState([]);
   const [allBookings, setAllBookings] = useState([]);
   const [showAllBookings, setShowAllBookings] = useState(false);
   const [sidebarVisible, setSidebarVisible] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
   const [statusBookings, setStatusBookings] = useState([]);
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState("");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('');
   const [showBookingDetails, setShowBookingDetails] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  // Toast state
+  const [toasts, setToasts] = useState([]);
+
+  // Toast functions
+  const showToast = (message, type = 'info', duration = 3000) => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, duration);
+  };
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  };
 
   useEffect(() => {
     fetchTodayBookings();
@@ -54,69 +65,64 @@ export default function Usher() {
 
   const fetchTodayBookings = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const today = new Date().toISOString().split("T")[0];
-      const response = await axios.get(
-        `${API_BASE_URL}/api/bookings?date=${today}&status=confirmed`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const token = localStorage.getItem('token');
+      const today = new Date().toISOString().split('T')[0];
+      const response = await axios.get(`https://fanaka-server-1.onrender.com/api/bookings?date=${today}&status=confirmed`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (response.data.success) setTodayBookings(response.data.bookings);
     } catch (error) {
-      console.error("Error fetching today bookings:", error);
-      alert("Error: Failed to load today's bookings");
+      console.error('Error fetching today bookings:', error);
+      showToast('Failed to load today\'s bookings', 'error');
     }
   };
 
   const fetchAllBookings = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_BASE_URL}/api/bookings`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const token = localStorage.getItem('token');
+      const response = await axios.get('https://fanaka-server-1.onrender.com/api/bookings', {
+        headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) setAllBookings(response.data.bookings);
     } catch (error) {
-      console.error("Error fetching all bookings:", error);
+      console.error('Error fetching all bookings:', error);
+      showToast('Failed to load all bookings', 'error');
     }
   };
 
   const filterBookingsByStatus = () => {
     const bookings = showAllBookings ? allBookings : todayBookings;
-    if (selectedStatus === "all") {
+    if (selectedStatus === 'all') {
       setFilteredBookings(bookings);
-    } else if (selectedStatus === "checkedIn") {
-      setFilteredBookings(bookings.filter((booking) => booking.checkedIn));
-    } else if (selectedStatus === "notCheckedIn") {
-      setFilteredBookings(
-        bookings.filter((booking) => !booking.checkedIn && booking.status === "confirmed")
-      );
+    } else if (selectedStatus === 'checkedIn') {
+      setFilteredBookings(bookings.filter(booking => booking.checkedIn));
+    } else if (selectedStatus === 'notCheckedIn') {
+      setFilteredBookings(bookings.filter(booking => !booking.checkedIn && booking.status === 'confirmed'));
     } else {
-      setFilteredBookings(
-        bookings.filter((booking) => booking.status === selectedStatus)
-      );
+      setFilteredBookings(bookings.filter(booking => booking.status === selectedStatus));
     }
   };
 
   const verifyBooking = async () => {
     if (!bookingRef.trim()) {
-      alert("Please enter booking reference");
+      showToast('Please enter booking reference', 'warning');
       return;
     }
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `${API_BASE_URL}/api/bookings/verify/${bookingRef}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`https://fanaka-server-1.onrender.com/api/bookings/verify/${bookingRef}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (response.data.success) {
         setBookingData(response.data.booking);
         setShowBookingDetails(true);
       } else {
-        alert("Booking reference not found");
+        showToast('Booking reference not found', 'error');
         setBookingData(null);
       }
     } catch (error) {
-      alert(error.response?.data?.msg || "Failed to verify booking");
+      showToast(error.response?.data?.msg || 'Failed to verify booking', 'error');
     } finally {
       setLoading(false);
     }
@@ -125,118 +131,107 @@ export default function Usher() {
   const checkInCustomer = async () => {
     if (!bookingData) return;
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.put(
-        `${API_BASE_URL}/api/bookings/${bookingData._id}/checkin`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const token = localStorage.getItem('token');
+      const response = await axios.put(`https://fanaka-server-1.onrender.com/api/bookings/${bookingData.id}/checkin`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (response.data.success) {
-        alert("Customer checked in successfully!");
+        showToast('Customer checked in successfully!', 'success');
         setBookingData({ ...bookingData, checkedIn: true, checkInTime: new Date() });
         fetchTodayBookings();
         fetchAllBookings();
         setTimeout(() => {
-          setBookingRef("");
+          setBookingRef('');
           setBookingData(null);
           setShowBookingDetails(false);
         }, 1500);
       }
     } catch (error) {
-      alert(error.response?.data?.msg || "Failed to check in");
+      showToast(error.response?.data?.msg || 'Failed to check in', 'error');
     }
   };
 
   const handleBack = () => {
     setShowBookingDetails(false);
     setBookingData(null);
-    setBookingRef("");
+    setBookingRef('');
   };
 
   const handleLogout = () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      localStorage.clear();
-      alert("Logged out successfully");
-      navigate("/login");
-    }
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    localStorage.clear();
+    showToast('Logged out successfully', 'success');
+    navigate('/login', { replace: true });
+    setShowLogoutModal(false);
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   const formatTime = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   const formatDateTime = (dateString) => {
-    if (!dateString) return "N/A";
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case "confirmed":
-        return "#4CAF50";
-      case "pending":
-        return "#FF9800";
-      case "cancelled":
-        return "#F44336";
-      case "checked_in":
-        return "#2196F3";
-      default:
-        return "#757575";
+      case 'confirmed': return '#4CAF50';
+      case 'pending': return '#FF9800';
+      case 'cancelled': return '#F44336';
+      case 'checked_in': return '#2196F3';
+      default: return '#757575';
     }
   };
 
   const getStatusText = (status) => {
     switch (status?.toLowerCase()) {
-      case "confirmed":
-        return "Confirmed";
-      case "pending":
-        return "Pending";
-      case "cancelled":
-        return "Cancelled";
-      case "checked_in":
-        return "Checked In";
-      default:
-        return status || "Unknown";
+      case 'confirmed': return 'Confirmed';
+      case 'pending': return 'Pending';
+      case 'cancelled': return 'Cancelled';
+      case 'checked_in': return 'Checked In';
+      default: return status || 'Unknown';
     }
   };
 
   const handleScanQR = () => {
-    alert("QR scanning would be implemented here");
+    showToast('QR scanning would be implemented here', 'info');
   };
 
   const showStatusBookings = (status) => {
     const bookings = showAllBookings ? allBookings : todayBookings;
     let filtered = [];
 
-    if (status === "checkedIn") {
-      filtered = bookings.filter((booking) => booking.checkedIn);
-      setSelectedStatusFilter("Checked In");
-    } else if (status === "notCheckedIn") {
-      filtered = bookings.filter(
-        (booking) => !booking.checkedIn && booking.status === "confirmed"
-      );
-      setSelectedStatusFilter("Not Checked In");
+    if (status === 'checkedIn') {
+      filtered = bookings.filter(booking => booking.checkedIn);
+      setSelectedStatusFilter('Checked In');
+    } else if (status === 'notCheckedIn') {
+      filtered = bookings.filter(booking => !booking.checkedIn && booking.status === 'confirmed');
+      setSelectedStatusFilter('Not Checked In');
     } else {
-      filtered = bookings.filter((booking) => booking.status === status);
+      filtered = bookings.filter(booking => booking.status === status);
       setSelectedStatusFilter(getStatusText(status));
     }
 
@@ -244,6 +239,49 @@ export default function Usher() {
     setStatusModalVisible(true);
   };
 
+  // Toast Component
+  const ToastContainer = () => (
+    <div style={styles.toastContainer}>
+      {toasts.map(toast => (
+        <div
+          key={toast.id}
+          style={{
+            ...styles.toast,
+            ...(toast.type === 'success' && styles.toastSuccess),
+            ...(toast.type === 'error' && styles.toastError),
+            ...(toast.type === 'warning' && styles.toastWarning),
+            ...(toast.type === 'info' && styles.toastInfo),
+          }}
+        >
+          <span>{toast.message}</span>
+          <button onClick={() => removeToast(toast.id)} style={styles.toastClose}>
+            <IoClose size={18} color="#fff" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+
+  // Logout Confirmation Modal
+  const LogoutModal = () => (
+    showLogoutModal && (
+      <div style={styles.modalOverlay} onClick={cancelLogout}>
+        <div style={styles.confirmModal} onClick={e => e.stopPropagation()}>
+          <div style={styles.confirmModalHeader}>
+            <IoWarningOutline size={32} color="#F44336" />
+            <h3>Confirm Logout</h3>
+          </div>
+          <p style={styles.confirmModalText}>Are you sure you want to logout?</p>
+          <div style={styles.confirmModalButtons}>
+            <button style={styles.confirmModalCancel} onClick={cancelLogout}>Cancel</button>
+            <button style={styles.confirmModalConfirm} onClick={confirmLogout}>Logout</button>
+          </div>
+        </div>
+      </div>
+    )
+  );
+
+  // Sidebar component (used in modal)
   const StatusSidebar = () => (
     <div style={styles.sidebar}>
       <button style={styles.sidebarCloseButton} onClick={() => setSidebarVisible(false)}>
@@ -251,99 +289,80 @@ export default function Usher() {
       </button>
       <h3 style={styles.sidebarTitle}>Filter by Status</h3>
       <button
-        style={{ ...styles.sidebarItem, ...(selectedStatus === "all" ? styles.sidebarItemActive : {}) }}
-        onClick={() => {
-          setSelectedStatus("all");
-          setSidebarVisible(false);
-        }}
+        style={{ ...styles.sidebarItem, ...(selectedStatus === 'all' && styles.sidebarItemActive) }}
+        onClick={() => { setSelectedStatus('all'); setSidebarVisible(false); }}
       >
-        <IoAppsOutline size={20} color={selectedStatus === "all" ? "#6200EE" : "#666"} />
-        <span style={{ ...styles.sidebarItemText, ...(selectedStatus === "all" ? styles.sidebarItemTextActive : {}) }}>
-          All Bookings
-        </span>
+        <IoAppsOutline size={20} color={selectedStatus === 'all' ? '#6200EE' : '#666'} />
+        <span style={{ ...styles.sidebarItemText, ...(selectedStatus === 'all' && styles.sidebarItemTextActive) }}>All Bookings</span>
       </button>
       <div style={styles.sidebarItem}>
-        <IoCheckmarkCircleOutline2 size={20} color={selectedStatus === "confirmed" ? "#4CAF50" : "#666"} />
         <button
-          style={{ ...styles.sidebarItemText, flex: 1, textAlign: "left", background: "none", border: "none", ...(selectedStatus === "confirmed" ? styles.sidebarItemTextActive : {}) }}
-          onClick={() => {
-            setSelectedStatus("confirmed");
-            setSidebarVisible(false);
-          }}
+          style={{ ...styles.sidebarItemContent, ...(selectedStatus === 'confirmed' && styles.sidebarItemActive) }}
+          onClick={() => { setSelectedStatus('confirmed'); setSidebarVisible(false); }}
         >
-          Confirmed
+          <IoCheckmarkCircleOutline size={20} color={selectedStatus === 'confirmed' ? '#4CAF50' : '#666'} />
+          <span style={{ ...styles.sidebarItemText, ...(selectedStatus === 'confirmed' && styles.sidebarItemTextActive) }}>Confirmed</span>
         </button>
-        <button onClick={() => showStatusBookings("confirmed")} style={styles.sidebarEllipsis}>
+        <button onClick={() => showStatusBookings('confirmed')} style={styles.sidebarItemIcon}>
           <IoEllipsisHorizontal size={20} color="#999" />
         </button>
       </div>
       <div style={styles.sidebarItem}>
-        <IoTimeOutline2 size={20} color={selectedStatus === "pending" ? "#FF9800" : "#666"} />
         <button
-          style={{ ...styles.sidebarItemText, flex: 1, textAlign: "left", background: "none", border: "none", ...(selectedStatus === "pending" ? styles.sidebarItemTextActive : {}) }}
-          onClick={() => {
-            setSelectedStatus("pending");
-            setSidebarVisible(false);
-          }}
+          style={{ ...styles.sidebarItemContent, ...(selectedStatus === 'pending' && styles.sidebarItemActive) }}
+          onClick={() => { setSelectedStatus('pending'); setSidebarVisible(false); }}
         >
-          Pending
+          <IoTimeOutline size={20} color={selectedStatus === 'pending' ? '#FF9800' : '#666'} />
+          <span style={{ ...styles.sidebarItemText, ...(selectedStatus === 'pending' && styles.sidebarItemTextActive) }}>Pending</span>
         </button>
-        <button onClick={() => showStatusBookings("pending")} style={styles.sidebarEllipsis}>
+        <button onClick={() => showStatusBookings('pending')} style={styles.sidebarItemIcon}>
           <IoEllipsisHorizontal size={20} color="#999" />
         </button>
       </div>
       <div style={styles.sidebarItem}>
-        <IoEnterOutline2 size={20} color={selectedStatus === "checkedIn" ? "#2196F3" : "#666"} />
         <button
-          style={{ ...styles.sidebarItemText, flex: 1, textAlign: "left", background: "none", border: "none", ...(selectedStatus === "checkedIn" ? styles.sidebarItemTextActive : {}) }}
-          onClick={() => {
-            setSelectedStatus("checkedIn");
-            setSidebarVisible(false);
-          }}
+          style={{ ...styles.sidebarItemContent, ...(selectedStatus === 'checkedIn' && styles.sidebarItemActive) }}
+          onClick={() => { setSelectedStatus('checkedIn'); setSidebarVisible(false); }}
         >
-          Checked In
+          <IoEnterOutline size={20} color={selectedStatus === 'checkedIn' ? '#2196F3' : '#666'} />
+          <span style={{ ...styles.sidebarItemText, ...(selectedStatus === 'checkedIn' && styles.sidebarItemTextActive) }}>Checked In</span>
         </button>
-        <button onClick={() => showStatusBookings("checkedIn")} style={styles.sidebarEllipsis}>
+        <button onClick={() => showStatusBookings('checkedIn')} style={styles.sidebarItemIcon}>
           <IoEllipsisHorizontal size={20} color="#999" />
         </button>
       </div>
       <div style={styles.sidebarItem}>
-        <IoLogOutOutline2 size={20} color={selectedStatus === "notCheckedIn" ? "#FF9800" : "#666"} />
         <button
-          style={{ ...styles.sidebarItemText, flex: 1, textAlign: "left", background: "none", border: "none", ...(selectedStatus === "notCheckedIn" ? styles.sidebarItemTextActive : {}) }}
-          onClick={() => {
-            setSelectedStatus("notCheckedIn");
-            setSidebarVisible(false);
-          }}
+          style={{ ...styles.sidebarItemContent, ...(selectedStatus === 'notCheckedIn' && styles.sidebarItemActive) }}
+          onClick={() => { setSelectedStatus('notCheckedIn'); setSidebarVisible(false); }}
         >
-          Not Checked In
+          <IoLogOutOutline size={20} color={selectedStatus === 'notCheckedIn' ? '#FF9800' : '#666'} />
+          <span style={{ ...styles.sidebarItemText, ...(selectedStatus === 'notCheckedIn' && styles.sidebarItemTextActive) }}>Not Checked In</span>
         </button>
-        <button onClick={() => showStatusBookings("notCheckedIn")} style={styles.sidebarEllipsis}>
+        <button onClick={() => showStatusBookings('notCheckedIn')} style={styles.sidebarItemIcon}>
           <IoEllipsisHorizontal size={20} color="#999" />
         </button>
       </div>
       <div style={styles.sidebarItem}>
-        <IoCloseCircleOutline size={20} color={selectedStatus === "cancelled" ? "#F44336" : "#666"} />
         <button
-          style={{ ...styles.sidebarItemText, flex: 1, textAlign: "left", background: "none", border: "none", ...(selectedStatus === "cancelled" ? styles.sidebarItemTextActive : {}) }}
-          onClick={() => {
-            setSelectedStatus("cancelled");
-            setSidebarVisible(false);
-          }}
+          style={{ ...styles.sidebarItemContent, ...(selectedStatus === 'cancelled' && styles.sidebarItemActive) }}
+          onClick={() => { setSelectedStatus('cancelled'); setSidebarVisible(false); }}
         >
-          Cancelled
+          <IoCloseCircleOutline size={20} color={selectedStatus === 'cancelled' ? '#F44336' : '#666'} />
+          <span style={{ ...styles.sidebarItemText, ...(selectedStatus === 'cancelled' && styles.sidebarItemTextActive) }}>Cancelled</span>
         </button>
-        <button onClick={() => showStatusBookings("cancelled")} style={styles.sidebarEllipsis}>
+        <button onClick={() => showStatusBookings('cancelled')} style={styles.sidebarItemIcon}>
           <IoEllipsisHorizontal size={20} color="#999" />
         </button>
       </div>
     </div>
   );
 
-  const BookingDetailsModal = () =>
-    showBookingDetails && bookingData ? (
+  // Booking Details Modal
+  const BookingDetailsModal = () => (
+    showBookingDetails && (
       <div style={styles.detailsModalOverlay} onClick={handleBack}>
-        <div style={styles.detailsModalContent} onClick={(e) => e.stopPropagation()}>
+        <div style={styles.detailsModalContent} onClick={e => e.stopPropagation()}>
           <div style={styles.detailsModalHeader}>
             <button onClick={handleBack} style={styles.iconButton}>
               <IoArrowBack size={24} color="#333" />
@@ -352,127 +371,138 @@ export default function Usher() {
             <div style={{ width: 24 }} />
           </div>
           <div style={styles.detailsModalBody}>
-            <div style={styles.detailsSection}>
-              <p style={styles.detailsSectionTitle}>BOOKING INFORMATION</p>
-              <p style={styles.detailsBookingRef}>{bookingData.bookingReference}</p>
-              <div style={styles.detailsStatusRow}>
-                <span style={{ ...styles.detailsStatusBadge, backgroundColor: bookingData.checkedIn ? "#4CAF50" : "#FF9800" }}>
-                  {bookingData.checkedIn ? "CHECKED IN" : "NOT CHECKED IN"}
-                </span>
-                <span style={{ ...styles.detailsStatusBadge, backgroundColor: getStatusColor(bookingData.status) }}>
-                  {bookingData.status?.toUpperCase() || "PENDING"}
-                </span>
-              </div>
-            </div>
-
-            <div style={styles.detailsSection}>
-              <p style={styles.detailsSectionTitle}>PLAY INFORMATION</p>
-              <p style={styles.detailsPlayTitle}>{bookingData.playTitle}</p>
-              <div style={styles.detailsRow}>
-                <IoCalendarOutline size={18} color="#666" />
-                <span style={styles.detailsRowText}>Date: {formatDate(bookingData.playDate)}</span>
-              </div>
-              <div style={styles.detailsRow}>
-                <IoTimeOutline2 size={18} color="#666" />
-                <span style={styles.detailsRowText}>Time: {formatTime(bookingData.playDate)}</span>
-              </div>
-            </div>
-
-            <div style={styles.detailsSection}>
-              <p style={styles.detailsSectionTitle}>CUSTOMER INFORMATION</p>
-              <p style={styles.detailsCustomerName}>{bookingData.customerName}</p>
-              <div style={styles.detailsRow}>
-                <IoMailOutline size={18} color="#666" />
-                <span style={styles.detailsRowText}>{bookingData.customerEmail}</span>
-              </div>
-              {bookingData.customerPhone && (
-                <div style={styles.detailsRow}>
-                  <IoCallOutline size={18} color="#666" />
-                  <span style={styles.detailsRowText}>{bookingData.customerPhone}</span>
-                </div>
-              )}
-            </div>
-
-            <div style={styles.detailsSection}>
-              <p style={styles.detailsSectionTitle}>TICKET DETAILS</p>
-              <div style={styles.detailsGrid}>
-                <div style={styles.detailsGridItem}>
-                  <p style={styles.detailsGridLabel}>Ticket Type</p>
-                  <p style={styles.detailsGridValue}>{bookingData.ticketType?.toUpperCase()}</p>
-                </div>
-                <div style={styles.detailsGridItem}>
-                  <p style={styles.detailsGridLabel}>Quantity</p>
-                  <p style={styles.detailsGridValue}>{bookingData.quantity} persons</p>
-                </div>
-                <div style={styles.detailsGridItem}>
-                  <p style={styles.detailsGridLabel}>Total Price</p>
-                  <p style={{ ...styles.detailsGridValue, color: "#6200EE" }}>KES {bookingData.totalPrice}</p>
-                </div>
-              </div>
-
-              {bookingData.allocatedSeats?.length > 0 && (
-                <>
-                  <p style={styles.detailsSectionSubtitle}>Assigned Seats</p>
-                  <div style={styles.seatsContainer}>
-                    {bookingData.allocatedSeats.map((seat, index) => (
-                      <span key={index} style={styles.seatChip}>
-                        {seat.number}
-                      </span>
-                    ))}
+            {bookingData && (
+              <>
+                <div style={styles.detailsSection}>
+                  <p style={styles.detailsSectionTitle}>BOOKING INFORMATION</p>
+                  <p style={styles.detailsBookingRef}>{bookingData.bookingReference}</p>
+                  <div style={styles.detailsStatusRow}>
+                    <span style={{ ...styles.detailsStatusBadge, backgroundColor: bookingData.checkedIn ? '#4CAF50' : '#FF9800' }}>
+                      {bookingData.checkedIn ? 'CHECKED IN' : 'NOT CHECKED IN'}
+                    </span>
+                    <span style={{ ...styles.detailsStatusBadge, backgroundColor: getStatusColor(bookingData.status) }}>
+                      {bookingData.status?.toUpperCase() || 'PENDING'}
+                    </span>
                   </div>
-                </>
-              )}
-            </div>
-
-            <div style={styles.detailsSection}>
-              <p style={styles.detailsSectionTitle}>PAYMENT INFORMATION</p>
-              <div style={styles.detailsGrid}>
-                <div style={styles.detailsGridItem}>
-                  <p style={styles.detailsGridLabel}>Payment Method</p>
-                  <p style={styles.detailsGridValue}>{bookingData.paymentMethod?.toUpperCase()}</p>
                 </div>
-                <div style={styles.detailsGridItem}>
-                  <p style={styles.detailsGridLabel}>Payment Status</p>
-                  <span style={{ ...styles.detailsStatusBadge, backgroundColor: bookingData.paymentStatus === "approved" ? "#4CAF50" : "#FF9800" }}>
-                    {bookingData.paymentStatus?.toUpperCase() || "PENDING"}
-                  </span>
-                </div>
-              </div>
-              {bookingData.paymentCode && (
-                <>
-                  <p style={styles.detailsSectionSubtitle}>Payment Code</p>
-                  <p style={styles.paymentCode}>{bookingData.paymentCode}</p>
-                </>
-              )}
-            </div>
 
-            {bookingData.checkedIn && bookingData.checkInTime && (
-              <div style={styles.detailsSection}>
-                <p style={styles.detailsSectionTitle}>CHECK-IN INFORMATION</p>
-                <div style={styles.detailsRow}>
-                  <IoCheckmarkDoneCircle size={18} color="#4CAF50" />
-                  <span style={{ ...styles.detailsRowText, color: "#4CAF50" }}>
-                    Checked in at {formatDateTime(bookingData.checkInTime)}
-                  </span>
+                <div style={styles.detailsSection}>
+                  <p style={styles.detailsSectionTitle}>PLAY INFORMATION</p>
+                  <p style={styles.detailsPlayTitle}>{bookingData.playTitle}</p>
+                  <div style={styles.detailsRow}>
+                    <IoCalendarOutline size={18} color="#666" />
+                    <span style={styles.detailsRowText}>Date: {formatDate(bookingData.playDate)}</span>
+                  </div>
+                  <div style={styles.detailsRow}>
+                    <IoTimeOutline size={18} color="#666" />
+                    <span style={styles.detailsRowText}>Time: {formatTime(bookingData.playDate)}</span>
+                  </div>
                 </div>
-              </div>
-            )}
 
-            {!bookingData.checkedIn && (
-              <div style={styles.detailsActions}>
-                <button style={styles.checkInButtonLarge} onClick={checkInCustomer}>
-                  <IoEnterOutline size={22} color="#fff" />
-                  <span style={styles.checkInButtonLargeText}>Check In Customer</span>
-                </button>
-              </div>
+                <div style={styles.detailsSection}>
+                  <p style={styles.detailsSectionTitle}>CUSTOMER INFORMATION</p>
+                  <p style={styles.detailsCustomerName}>{bookingData.customerName}</p>
+                  <div style={styles.detailsRow}>
+                    <IoMailOutline size={18} color="#666" />
+                    <span style={styles.detailsRowText}>{bookingData.customerEmail}</span>
+                  </div>
+                  {bookingData.customerPhone && (
+                    <div style={styles.detailsRow}>
+                      <IoCallOutline size={18} color="#666" />
+                      <span style={styles.detailsRowText}>{bookingData.customerPhone}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div style={styles.detailsSection}>
+                  <p style={styles.detailsSectionTitle}>TICKET DETAILS</p>
+                  <div style={styles.detailsGrid}>
+                    <div style={styles.detailsGridItem}>
+                      <span style={styles.detailsGridLabel}>Ticket Type</span>
+                      <span style={styles.detailsGridValue}>{bookingData.ticketType?.toUpperCase()}</span>
+                    </div>
+                    <div style={styles.detailsGridItem}>
+                      <span style={styles.detailsGridLabel}>Quantity</span>
+                      <span style={styles.detailsGridValue}>{bookingData.quantity} persons</span>
+                    </div>
+                    <div style={styles.detailsGridItem}>
+                      <span style={styles.detailsGridLabel}>Total Price</span>
+                      <span style={{ ...styles.detailsGridValue, color: '#6200EE' }}>KES {bookingData.totalPrice}</span>
+                    </div>
+                  </div>
+
+                  {bookingData.allocatedSeats?.length > 0 && (
+                    <>
+                      <p style={styles.detailsSectionSubtitle}>Assigned Seats</p>
+                      <div style={styles.seatsContainer}>
+                        {bookingData.allocatedSeats.map((seat, index) => (
+                          <span key={index} style={styles.seatChip}>
+                            {seat.number}
+                          </span>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div style={styles.detailsSection}>
+                  <p style={styles.detailsSectionTitle}>PAYMENT INFORMATION</p>
+                  <div style={styles.detailsGrid}>
+                    <div style={styles.detailsGridItem}>
+                      <span style={styles.detailsGridLabel}>Payment Method</span>
+                      <span style={styles.detailsGridValue}>{bookingData.paymentMethod?.toUpperCase()}</span>
+                    </div>
+                    <div style={styles.detailsGridItem}>
+                      <span style={styles.detailsGridLabel}>Payment Status</span>
+                      <span style={{ ...styles.detailsStatusBadge, backgroundColor: bookingData.paymentStatus === 'approved' ? '#4CAF50' : '#FF9800' }}>
+                        {bookingData.paymentStatus?.toUpperCase() || 'PENDING'}
+                      </span>
+                    </div>
+                  </div>
+                  {bookingData.paymentCode && (
+                    <>
+                      <p style={styles.detailsSectionSubtitle}>Payment Code</p>
+                      <code style={styles.paymentCode}>{bookingData.paymentCode}</code>
+                    </>
+                  )}
+                </div>
+
+                {bookingData.checkedIn && bookingData.checkInTime && (
+                  <div style={styles.detailsSection}>
+                    <p style={styles.detailsSectionTitle}>CHECK-IN INFORMATION</p>
+                    <div style={styles.detailsRow}>
+                      <IoCheckmarkDoneCircle size={18} color="#4CAF50" />
+                      <span style={{ ...styles.detailsRowText, color: '#4CAF50' }}>
+                        Checked in at {formatDateTime(bookingData.checkInTime)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {!bookingData.checkedIn && (
+                  <div style={styles.detailsActions}>
+                    <button style={styles.checkInButtonLarge} onClick={checkInCustomer}>
+                      <IoEnterOutline size={22} color="#fff" />
+                      <span style={styles.checkInButtonLargeText}>Check In Customer</span>
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
-    ) : null;
+    )
+  );
 
   return (
     <div style={styles.safeArea}>
+      {/* Toast notifications */}
+      <ToastContainer />
+
+      {/* Logout confirmation modal */}
+      <LogoutModal />
+
       <div style={styles.container}>
         {/* Header */}
         <div style={styles.header}>
@@ -484,10 +514,7 @@ export default function Usher() {
             <p style={styles.subtitle}>Verify and check-in customers</p>
           </div>
           <div style={styles.headerRight}>
-            <button
-              style={styles.messageButton}
-              onClick={() => navigate("/employee-inbox")}
-            >
+            <button style={styles.messageButton} onClick={() => navigate('/employee-inbox')}>
               <IoChatbubbleEllipsesOutline size={24} color="#6200EE" />
             </button>
             <button style={styles.logoutButton} onClick={handleLogout}>
@@ -513,7 +540,7 @@ export default function Usher() {
           </div>
           <button style={styles.verifyButton} onClick={verifyBooking} disabled={loading}>
             {loading ? (
-              <div style={styles.spinner}></div>
+              <span style={styles.verifyButtonText}>Loading...</span>
             ) : (
               <>
                 <IoCheckmarkCircleOutline size={20} color="#fff" />
@@ -527,23 +554,19 @@ export default function Usher() {
         <div style={styles.bookingsSection}>
           <div style={styles.sectionHeader}>
             <h3 style={styles.sectionTitle}>
-              {selectedStatus === "all"
-                ? "All"
-                : selectedStatus === "checkedIn"
-                ? "Checked In"
-                : selectedStatus === "notCheckedIn"
-                ? "Not Checked In"
-                : getStatusText(selectedStatus)}{" "}
-              ({filteredBookings.length})
+              {selectedStatus === 'all' ? 'All' :
+                selectedStatus === 'checkedIn' ? 'Checked In' :
+                selectedStatus === 'notCheckedIn' ? 'Not Checked In' :
+                getStatusText(selectedStatus)} ({filteredBookings.length})
             </h3>
             <button style={styles.toggleButton} onClick={() => setShowAllBookings(!showAllBookings)}>
-              <span style={styles.toggleButtonText}>{showAllBookings ? "Today" : "All"}</span>
+              <span style={styles.toggleButtonText}>{showAllBookings ? 'Today' : 'All'}</span>
             </button>
           </div>
           <div style={styles.bookingsList}>
             {filteredBookings.map((booking) => (
               <button
-                key={booking._id}
+                key={booking.id}
                 style={styles.bookingItem}
                 onClick={() => {
                   setBookingRef(booking.bookingReference);
@@ -551,24 +574,17 @@ export default function Usher() {
                 }}
               >
                 <div style={styles.bookingItemLeft}>
-                  <p style={styles.bookingItemRef}>{booking.bookingReference}</p>
-                  <p style={styles.bookingItemCustomer}>{booking.customerName}</p>
+                  <span style={styles.bookingItemRef}>{booking.bookingReference}</span>
+                  <span style={styles.bookingItemCustomer}>{booking.customerName}</span>
                   <div style={styles.bookingItemDetails}>
-                    <p style={styles.bookingItemPlay}>{booking.playTitle}</p>
-                    <p style={styles.bookingItemDate}>
-                      {formatDate(booking.playDate)} {formatTime(booking.playDate)}
-                    </p>
+                    <span style={styles.bookingItemPlay}>{booking.playTitle}</span>
+                    <span style={styles.bookingItemDate}>{formatDate(booking.playDate)} {formatTime(booking.playDate)}</span>
                   </div>
                 </div>
                 <div style={styles.bookingItemRight}>
-                  <p style={styles.bookingItemQuantity}>{booking.quantity} pax</p>
-                  <span
-                    style={{
-                      ...styles.bookingItemStatus,
-                      backgroundColor: booking.checkedIn ? "#4CAF50" : getStatusColor(booking.status),
-                    }}
-                  >
-                    {booking.checkedIn ? "In" : booking.status || "Pending"}
+                  <span style={styles.bookingItemQuantity}>{booking.quantity} pax</span>
+                  <span style={{ ...styles.bookingItemStatus, backgroundColor: booking.checkedIn ? '#4CAF50' : getStatusColor(booking.status) }}>
+                    {booking.checkedIn ? 'In' : booking.status || 'Pending'}
                   </span>
                 </div>
               </button>
@@ -581,7 +597,7 @@ export default function Usher() {
       {/* Sidebar Modal */}
       {sidebarVisible && (
         <div style={styles.modalOverlay} onClick={() => setSidebarVisible(false)}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
             <StatusSidebar />
           </div>
         </div>
@@ -590,11 +606,9 @@ export default function Usher() {
       {/* Status Bookings Modal */}
       {statusModalVisible && (
         <div style={styles.statusModalOverlay} onClick={() => setStatusModalVisible(false)}>
-          <div style={styles.statusModalContent} onClick={(e) => e.stopPropagation()}>
+          <div style={styles.statusModalContent} onClick={e => e.stopPropagation()}>
             <div style={styles.statusModalHeader}>
-              <h3 style={styles.statusModalTitle}>
-                {selectedStatusFilter} Bookings ({statusBookings.length})
-              </h3>
+              <h3 style={styles.statusModalTitle}>{selectedStatusFilter} Bookings ({statusBookings.length})</h3>
               <button onClick={() => setStatusModalVisible(false)} style={styles.iconButton}>
                 <IoClose size={24} color="#333" />
               </button>
@@ -602,7 +616,7 @@ export default function Usher() {
             <div style={styles.statusModalList}>
               {statusBookings.map((booking) => (
                 <button
-                  key={booking._id}
+                  key={booking.id}
                   style={styles.statusModalItem}
                   onClick={() => {
                     setBookingRef(booking.bookingReference);
@@ -610,12 +624,10 @@ export default function Usher() {
                     setStatusModalVisible(false);
                   }}
                 >
-                  <p style={styles.statusModalRef}>{booking.bookingReference}</p>
-                  <p style={styles.statusModalCustomer}>{booking.customerName}</p>
-                  <p style={styles.statusModalPlay}>{booking.playTitle}</p>
-                  <p style={styles.statusModalTime}>
-                    {formatTime(booking.playDate)} • {booking.quantity} seats
-                  </p>
+                  <span style={styles.statusModalRef}>{booking.bookingReference}</span>
+                  <span style={styles.statusModalCustomer}>{booking.customerName}</span>
+                  <span style={styles.statusModalPlay}>{booking.playTitle}</span>
+                  <span style={styles.statusModalTime}>{formatTime(booking.playDate)} • {booking.quantity} seats</span>
                 </button>
               ))}
               {statusBookings.length === 0 && <p style={styles.statusModalEmpty}>No bookings found</p>}
@@ -630,543 +642,673 @@ export default function Usher() {
   );
 }
 
-// Inline styles
+// Styles (converted from React Native StyleSheet)
 const styles = {
   safeArea: {
-    backgroundColor: "#f8f9fa",
-    minHeight: "100vh",
-    fontFamily: "system-ui, -apple-system, sans-serif",
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+    minHeight: '100vh',
   },
   container: {
-    padding: "16px",
-    maxWidth: "1200px",
-    margin: "0 auto",
+    padding: 16,
   },
   header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px",
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   menuButton: {
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    padding: "8px",
+    padding: 8,
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
   },
   headerCenter: {
     flex: 1,
-    textAlign: "center",
+    textAlign: 'center',
   },
   title: {
-    fontSize: "28px",
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
     margin: 0,
   },
   subtitle: {
-    fontSize: "16px",
-    color: "#666",
-    margin: "4px 0 0",
+    fontSize: 16,
+    color: '#666',
+    marginTop: 4,
   },
   headerRight: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   messageButton: {
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    padding: "8px",
+    padding: 8,
+    marginRight: 8,
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
   },
   logoutButton: {
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    padding: "8px",
+    padding: 8,
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
   },
   searchContainer: {
-    backgroundColor: "#fff",
-    borderRadius: "12px",
-    padding: "16px",
-    marginBottom: "20px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
   },
   searchBox: {
-    display: "flex",
-    alignItems: "center",
-    marginBottom: "16px",
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   input: {
     flex: 1,
-    border: "1px solid #ddd",
-    borderRadius: "8px",
-    padding: "12px",
-    fontSize: "16px",
-    marginRight: "10px",
-    outline: "none",
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginRight: 10,
+    outline: 'none',
   },
   scanButton: {
-    background: "#f0f0f0",
-    border: "none",
-    borderRadius: "8px",
-    padding: "10px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    padding: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   verifyButton: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-    backgroundColor: "#6200EE",
-    color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    padding: "14px",
-    width: "100%",
-    fontSize: "16px",
-    fontWeight: "600",
-    cursor: "pointer",
+    display: 'flex',
+    flexDirection: 'row',
+    backgroundColor: '#6200EE',
+    borderRadius: 8,
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: 'none',
+    cursor: 'pointer',
+    width: '100%',
   },
   verifyButtonText: {
-    marginLeft: "8px",
-  },
-  spinner: {
-    width: "20px",
-    height: "20px",
-    border: "3px solid rgba(255,255,255,0.3)",
-    borderTop: "3px solid #fff",
-    borderRadius: "50%",
-    animation: "spin 1s linear infinite",
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   bookingsSection: {
     flex: 1,
   },
   sectionHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "12px",
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: "18px",
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
     margin: 0,
   },
   toggleButton: {
-    backgroundColor: "#6200EE",
-    borderRadius: "20px",
-    padding: "6px 15px",
-    border: "none",
-    cursor: "pointer",
+    backgroundColor: '#6200EE',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    paddingVertical: 6,
+    border: 'none',
+    cursor: 'pointer',
   },
   toggleButtonText: {
-    color: "#fff",
-    fontSize: "14px",
-    fontWeight: "500",
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
   bookingsList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    maxHeight: "60vh",
-    overflowY: "auto",
+    maxHeight: 'calc(100vh - 300px)',
+    overflowY: 'auto',
   },
   bookingItem: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: "8px",
-    padding: "16px",
-    border: "none",
-    width: "100%",
-    textAlign: "left",
-    cursor: "pointer",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 8,
+    border: 'none',
+    width: '100%',
+    cursor: 'pointer',
+    textAlign: 'left',
   },
   bookingItemLeft: {
     flex: 1,
   },
   bookingItemRef: {
-    fontSize: "16px",
-    fontWeight: "bold",
-    color: "#333",
-    margin: "0 0 2px",
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    display: 'block',
   },
   bookingItemCustomer: {
-    fontSize: "14px",
-    color: "#666",
-    margin: "0 0 4px",
+    fontSize: 14,
+    color: '#666',
+    marginTop: 2,
+    display: 'block',
   },
   bookingItemDetails: {
-    marginTop: "4px",
+    marginTop: 8,
   },
   bookingItemPlay: {
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "#333",
-    margin: "0 0 2px",
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    display: 'block',
   },
   bookingItemDate: {
-    fontSize: "12px",
-    color: "#999",
-    margin: 0,
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
+    display: 'block',
   },
   bookingItemRight: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
+    display: 'flex',
+    flexDirection: 'column',
   },
   bookingItemQuantity: {
-    fontSize: "14px",
-    color: "#333",
-    margin: "0 0 4px",
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 4,
   },
   bookingItemStatus: {
-    borderRadius: "12px",
-    padding: "4px 10px",
-    color: "#fff",
-    fontSize: "12px",
-    fontWeight: "600",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   emptyText: {
-    textAlign: "center",
-    color: "#999",
-    fontSize: "16px",
-    marginTop: "20px",
+    textAlign: 'center',
+    color: '#999',
+    fontSize: 16,
+    marginTop: 20,
   },
-  // Sidebar styles
+  // Sidebar
   sidebar: {
-    width: "280px",
-    backgroundColor: "#fff",
-    height: "100%",
-    padding: "20px",
-    paddingTop: "50px",
-    position: "relative",
+    width: 280,
+    backgroundColor: '#fff',
+    height: '100%',
+    padding: 20,
+    paddingTop: 50,
+    position: 'relative',
   },
   sidebarCloseButton: {
-    position: "absolute",
-    top: "10px",
-    right: "10px",
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    padding: "10px",
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    padding: 10,
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
   },
   sidebarTitle: {
-    fontSize: "20px",
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: "20px",
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 20,
+    marginTop: 0,
   },
   sidebarItem: {
-    display: "flex",
-    alignItems: "center",
-    padding: "12px 15px",
-    marginBottom: "8px",
-    borderRadius: "8px",
-    backgroundColor: "#f8f9fa",
-    width: "100%",
-    border: "none",
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    marginBottom: 8,
+    borderRadius: 8,
+    backgroundColor: '#f8f9fa',
+    border: 'none',
+    width: '100%',
+    cursor: 'pointer',
+  },
+  sidebarItemContent: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 0,
   },
   sidebarItemActive: {
-    backgroundColor: "#6200EE10",
-    borderLeft: "4px solid #6200EE",
+    backgroundColor: '#6200EE10',
+    borderLeftWidth: 4,
+    borderLeftColor: '#6200EE',
+    borderLeftStyle: 'solid',
   },
   sidebarItemText: {
-    fontSize: "16px",
-    color: "#333",
-    marginLeft: "12px",
     flex: 1,
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 12,
+    textAlign: 'left',
   },
   sidebarItemTextActive: {
-    color: "#6200EE",
-    fontWeight: "600",
+    color: '#6200EE',
+    fontWeight: '600',
   },
-  sidebarEllipsis: {
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    padding: "4px",
+  sidebarItemIcon: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 4,
   },
-  // Modal overlays
+  // Modal overlay
   modalOverlay: {
-    position: "fixed",
+    position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: 'rgba(0,0,0,0.5)',
     zIndex: 1000,
   },
   modalContent: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
-    height: "100%",
+    height: '100%',
   },
+  // Status modal
   statusModalOverlay: {
-    position: "fixed",
+    position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "center",
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
     zIndex: 1000,
   },
   statusModalContent: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: "20px",
-    borderTopRightRadius: "20px",
-    maxHeight: "80%",
-    width: "100%",
-    maxWidth: "600px",
-    margin: "0 auto",
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+    width: '100%',
   },
   statusModalHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "20px",
-    borderBottom: "1px solid #eee",
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    borderBottomStyle: 'solid',
   },
   statusModalTitle: {
-    fontSize: "20px",
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
     margin: 0,
   },
   statusModalList: {
-    padding: "20px",
-    maxHeight: "calc(80vh - 80px)",
-    overflowY: "auto",
+    padding: 20,
+    maxHeight: 'calc(80vh - 80px)',
+    overflowY: 'auto',
   },
   statusModalItem: {
-    backgroundColor: "#f8f9fa",
-    borderRadius: "8px",
-    padding: "15px",
-    marginBottom: "10px",
-    border: "none",
-    width: "100%",
-    textAlign: "left",
-    cursor: "pointer",
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 10,
+    border: 'none',
+    width: '100%',
+    textAlign: 'left',
+    cursor: 'pointer',
   },
   statusModalRef: {
-    fontSize: "16px",
-    fontWeight: "bold",
-    color: "#333",
-    margin: "0 0 4px",
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    display: 'block',
   },
   statusModalCustomer: {
-    fontSize: "14px",
-    color: "#666",
-    margin: "0 0 4px",
+    fontSize: 14,
+    color: '#666',
+    marginTop: 4,
+    display: 'block',
   },
   statusModalPlay: {
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "#333",
-    margin: "0 0 4px",
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    marginTop: 8,
+    display: 'block',
   },
   statusModalTime: {
-    fontSize: "12px",
-    color: "#999",
-    margin: 0,
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
+    display: 'block',
   },
   statusModalEmpty: {
-    textAlign: "center",
-    color: "#999",
-    fontSize: "16px",
-    padding: "20px",
+    textAlign: 'center',
+    color: '#999',
+    fontSize: 16,
+    padding: 20,
   },
-  // Booking details modal
+  // Booking Details Modal
   detailsModalOverlay: {
-    position: "fixed",
+    position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "center",
-    zIndex: 1100,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+    zIndex: 1000,
   },
   detailsModalContent: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: "20px",
-    borderTopRightRadius: "20px",
-    maxHeight: "90%",
-    width: "100%",
-    maxWidth: "600px",
-    margin: "0 auto",
-    overflow: "hidden",
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '90%',
+    width: '100%',
   },
   detailsModalHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "20px",
-    borderBottom: "1px solid #eee",
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    borderBottomStyle: 'solid',
   },
   detailsModalTitle: {
-    fontSize: "20px",
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
     margin: 0,
   },
   detailsModalBody: {
-    padding: "20px",
-    maxHeight: "calc(90vh - 80px)",
-    overflowY: "auto",
+    padding: 20,
+    maxHeight: 'calc(90vh - 80px)',
+    overflowY: 'auto',
   },
   detailsSection: {
-    marginBottom: "25px",
+    marginBottom: 25,
   },
   detailsSectionTitle: {
-    fontSize: "12px",
-    fontWeight: "600",
-    color: "#666",
-    marginBottom: "12px",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 12,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    margin: '0 0 12px 0',
   },
   detailsSectionSubtitle: {
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "#333",
-    marginBottom: "8px",
-    marginTop: "5px",
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 8,
+    marginTop: 5,
   },
   detailsBookingRef: {
-    fontSize: "24px",
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: "12px",
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+    margin: '0 0 12px 0',
   },
   detailsStatusRow: {
-    display: "flex",
-    gap: "10px",
-    marginBottom: "15px",
+    display: 'flex',
+    flexDirection: 'row',
+    marginBottom: 15,
   },
   detailsStatusBadge: {
-    borderRadius: "15px",
-    padding: "6px 12px",
-    color: "#fff",
-    fontSize: "12px",
-    fontWeight: "600",
+    borderRadius: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 10,
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   detailsPlayTitle: {
-    fontSize: "20px",
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: "10px",
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+    margin: '0 0 10px 0',
   },
   detailsCustomerName: {
-    fontSize: "18px",
-    fontWeight: "500",
-    color: "#333",
-    marginBottom: "10px",
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 10,
+    margin: '0 0 10px 0',
   },
   detailsRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    marginBottom: "8px",
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   detailsRowText: {
-    fontSize: "16px",
-    color: "#666",
+    marginLeft: 10,
+    fontSize: 16,
+    color: '#666',
   },
   detailsGrid: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "10px",
-    marginBottom: "15px",
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 15,
   },
   detailsGridItem: {
-    width: "calc(50% - 5px)",
-    marginBottom: "12px",
+    width: '48%',
+    marginBottom: 12,
   },
   detailsGridLabel: {
-    fontSize: "12px",
-    color: "#666",
-    marginBottom: "4px",
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+    display: 'block',
   },
   detailsGridValue: {
-    fontSize: "16px",
-    fontWeight: "500",
-    color: "#333",
-    margin: 0,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
   },
   seatsContainer: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-    marginTop: "8px",
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
   },
   seatChip: {
-    backgroundColor: "#6200EE",
-    borderRadius: "6px",
-    padding: "6px 12px",
-    color: "#fff",
-    fontSize: "14px",
-    fontWeight: "500",
+    backgroundColor: '#6200EE',
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 8,
+    marginBottom: 8,
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
   paymentCode: {
-    fontSize: "16px",
-    fontFamily: "monospace",
-    color: "#333",
-    backgroundColor: "#f8f9fa",
-    padding: "10px",
-    borderRadius: "8px",
-    marginTop: "5px",
+    fontSize: 16,
+    fontFamily: 'monospace',
+    color: '#333',
+    backgroundColor: '#f8f9fa',
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 5,
+    display: 'block',
   },
   detailsActions: {
-    marginTop: "20px",
-    marginBottom: "10px",
+    marginTop: 20,
+    marginBottom: 10,
   },
   checkInButtonLarge: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "10px",
-    backgroundColor: "#4CAF50",
-    borderRadius: "10px",
-    padding: "18px",
-    border: "none",
-    width: "100%",
-    cursor: "pointer",
+    display: 'flex',
+    flexDirection: 'row',
+    backgroundColor: '#4CAF50',
+    borderRadius: 10,
+    padding: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: 'none',
+    cursor: 'pointer',
+    width: '100%',
   },
   checkInButtonLargeText: {
-    color: "#fff",
-    fontSize: "18px",
-    fontWeight: "600",
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginLeft: 10,
   },
   iconButton: {
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    padding: "4px",
-    display: "flex",
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 8,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Toast styles
+  toastContainer: {
+    position: 'fixed',
+    top: 20,
+    right: 20,
+    zIndex: 2000,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+  },
+  toast: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minWidth: '250px',
+    maxWidth: '400px',
+    padding: '12px 16px',
+    borderRadius: '8px',
+    color: '#fff',
+    fontSize: '14px',
+    fontWeight: '500',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    animation: 'slideIn 0.3s ease',
+  },
+  toastSuccess: {
+    backgroundColor: '#4CAF50',
+  },
+  toastError: {
+    backgroundColor: '#F44336',
+  },
+  toastWarning: {
+    backgroundColor: '#FF9800',
+  },
+  toastInfo: {
+    backgroundColor: '#2196F3',
+  },
+  toastClose: {
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    marginLeft: '12px',
+    padding: 0,
+    display: 'flex',
+    alignItems: 'center',
+  },
+  // Logout confirmation modal
+  confirmModal: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 24,
+    maxWidth: '400px',
+    margin: 'auto',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+  },
+  confirmModalHeader: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  confirmModalText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  confirmModalButtons: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '12px',
+  },
+  confirmModalCancel: {
+    flex: 1,
+    padding: '12px',
+    borderRadius: 8,
+    border: '1px solid #ddd',
+    backgroundColor: '#f5f5f5',
+    fontSize: 16,
+    fontWeight: '500',
+    cursor: 'pointer',
+  },
+  confirmModalConfirm: {
+    flex: 1,
+    padding: '12px',
+    borderRadius: 8,
+    border: 'none',
+    backgroundColor: '#F44336',
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+    cursor: 'pointer',
   },
 };
 
-// Add global keyframe animation for spinner
-const styleSheet = document.createElement("style");
-styleSheet.innerText = `
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+// Add keyframes for toast animation (can be added globally in CSS)
+const styleSheet = document.styleSheets[0];
+styleSheet.insertRule(`
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
   }
-`;
-document.head.appendChild(styleSheet);
+`, styleSheet.cssRules.length);

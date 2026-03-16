@@ -40,6 +40,14 @@ export default function Tickets() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const searchRef = useRef(null);
 
+  // Toast state
+  const [toast, setToast] = useState({ show: false, message: "", type: "info" });
+
+  const showToast = (message, type = "info") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "info" }), 3000);
+  };
+
   const fetchTickets = async () => {
     try {
       setError(null);
@@ -49,11 +57,12 @@ export default function Tickets() {
       } else {
         setTickets([]);
         setError("Unexpected response format");
+        showToast("Unexpected response format", "error");
       }
     } catch (error) {
       console.error("Fetch error:", error.message);
       setError("Failed to load tickets. Please check your connection.");
-      alert("Error: Failed to load tickets");
+      showToast("Failed to load tickets", "error");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -103,7 +112,7 @@ export default function Tickets() {
         paymentStatus: status,
       });
       if (response.data.success) {
-        alert(`Payment ${status} successfully`);
+        showToast(`Payment ${status} successfully`, "success");
         setTickets((prevTickets) =>
           prevTickets.map((ticket) =>
             ticket.id === ticketId || ticket._id === ticketId
@@ -113,11 +122,11 @@ export default function Tickets() {
         );
         setModalVisible(false);
       } else {
-        alert(response.data.msg || "Failed to update status");
+        showToast(response.data.msg || "Failed to update status", "error");
       }
     } catch (error) {
       console.error("Update status error:", error.message);
-      alert("Error: Failed to update payment status");
+      showToast("Failed to update payment status", "error");
     } finally {
       setUpdatingStatus(false);
     }
@@ -518,17 +527,32 @@ export default function Tickets() {
           </div>
         </div>
       )}
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div
+          style={{
+            ...styles.toast,
+            ...(toast.type === "success" ? styles.toastSuccess : {}),
+            ...(toast.type === "error" ? styles.toastError : {}),
+            ...(toast.type === "info" ? styles.toastInfo : {}),
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }
 
-// Inline styles
+// Inline styles (updated with toast styles)
 const styles = {
   container: {
     flex: 1,
     backgroundColor: "#f8f9fa",
     minHeight: "100vh",
     fontFamily: "system-ui, -apple-system, sans-serif",
+    position: "relative",
   },
   header: {
     backgroundColor: "#6200EE",
@@ -927,6 +951,22 @@ const styles = {
   modalButtonText: {
     fontSize: "16px",
   },
+  // Toast styles
+  toast: {
+    position: "fixed",
+    top: "20px",
+    right: "20px",
+    padding: "12px 20px",
+    borderRadius: "8px",
+    color: "#fff",
+    fontWeight: "500",
+    zIndex: 2000,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    maxWidth: "300px",
+  },
+  toastSuccess: { backgroundColor: "#4CAF50" },
+  toastError: { backgroundColor: "#F44336" },
+  toastInfo: { backgroundColor: "#2196F3" },
 };
 
 // Add global keyframe animation for spinner

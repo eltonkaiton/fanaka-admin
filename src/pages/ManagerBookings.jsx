@@ -34,6 +34,19 @@ export default function ManagerBookings() {
     revenue: 0,
   });
 
+  // Toast and confirmation state
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+  const [confirm, setConfirm] = useState({ show: false, message: '', onConfirm: null });
+
+  const showToast = (message, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 3000);
+  };
+
+  const showConfirm = (message, onConfirm) => {
+    setConfirm({ show: true, message, onConfirm });
+  };
+
   const fetchBookings = async () => {
     try {
       setLoading(true);
@@ -53,7 +66,7 @@ export default function ManagerBookings() {
       }
     } catch (err) {
       console.error('Fetch bookings error:', err);
-      alert('Failed to load bookings');
+      showToast('Failed to load bookings', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -72,37 +85,39 @@ export default function ManagerBookings() {
   };
 
   const handleApprovePayment = async (bookingId) => {
-    if (!window.confirm('Approve payment for this booking?')) return;
-    try {
-      const token = localStorage.getItem('token');
-      await axios.patch(
-        `${API_BASE_URL}/api/bookings/${bookingId}/approve-payment`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert('Payment approved');
-      fetchBookings();
-    } catch (err) {
-      console.error('Approve payment error:', err);
-      alert('Failed to approve payment');
-    }
+    showConfirm('Approve payment for this booking?', async () => {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.patch(
+          `${API_BASE_URL}/api/bookings/${bookingId}/approve-payment`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        showToast('Payment approved', 'success');
+        fetchBookings();
+      } catch (err) {
+        console.error('Approve payment error:', err);
+        showToast('Failed to approve payment', 'error');
+      }
+    });
   };
 
   const handleCancelBooking = async (bookingId) => {
-    if (!window.confirm('Cancel this booking?')) return;
-    try {
-      const token = localStorage.getItem('token');
-      await axios.patch(
-        `${API_BASE_URL}/api/bookings/${bookingId}/cancel`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert('Booking cancelled');
-      fetchBookings();
-    } catch (err) {
-      console.error('Cancel booking error:', err);
-      alert('Failed to cancel booking');
-    }
+    showConfirm('Cancel this booking?', async () => {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.patch(
+          `${API_BASE_URL}/api/bookings/${bookingId}/cancel`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        showToast('Booking cancelled', 'success');
+        fetchBookings();
+      } catch (err) {
+        console.error('Cancel booking error:', err);
+        showToast('Failed to cancel booking', 'error');
+      }
+    });
   };
 
   useEffect(() => {
@@ -510,6 +525,68 @@ export default function ManagerBookings() {
       backgroundColor: '#f8f9fa',
       color: '#333',
     },
+    // Toast styles
+    toast: {
+      position: 'fixed',
+      top: 20,
+      right: 20,
+      padding: '12px 20px',
+      borderRadius: 8,
+      color: '#fff',
+      fontWeight: '500',
+      zIndex: 2000,
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      maxWidth: '300px',
+    },
+    toastSuccess: { backgroundColor: '#4CAF50' },
+    toastError: { backgroundColor: '#F44336' },
+    toastInfo: { backgroundColor: '#2196F3' },
+    // Confirm modal styles
+    confirmOverlay: {
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 1500,
+    },
+    confirmContent: {
+      backgroundColor: '#fff',
+      borderRadius: 12,
+      padding: 24,
+      maxWidth: '400px',
+      width: '90%',
+      textAlign: 'center',
+    },
+    confirmButtons: {
+      display: 'flex',
+      gap: 12,
+      marginTop: 20,
+      justifyContent: 'center',
+    },
+    cancelBtn: {
+      flex: 1,
+      backgroundColor: '#f5f5f5',
+      border: 'none',
+      borderRadius: 8,
+      padding: '12px',
+      fontWeight: '600',
+      cursor: 'pointer',
+    },
+    saveBtn: {
+      flex: 1,
+      backgroundColor: '#6200EE',
+      color: '#fff',
+      border: 'none',
+      borderRadius: 8,
+      padding: '12px',
+      fontWeight: '600',
+      cursor: 'pointer',
+    },
   };
 
   if (loading && !refreshing) {
@@ -782,6 +859,46 @@ export default function ManagerBookings() {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div
+          style={{
+            ...styles.toast,
+            ...(toast.type === 'success' ? styles.toastSuccess : {}),
+            ...(toast.type === 'error' ? styles.toastError : {}),
+            ...(toast.type === 'info' ? styles.toastInfo : {}),
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirm.show && (
+        <div style={styles.confirmOverlay} onClick={() => setConfirm({ show: false, message: '', onConfirm: null })}>
+          <div style={styles.confirmContent} onClick={(e) => e.stopPropagation()}>
+            <p>{confirm.message}</p>
+            <div style={styles.confirmButtons}>
+              <button
+                style={styles.cancelBtn}
+                onClick={() => setConfirm({ show: false, message: '', onConfirm: null })}
+              >
+                Cancel
+              </button>
+              <button
+                style={styles.saveBtn}
+                onClick={() => {
+                  confirm.onConfirm();
+                  setConfirm({ show: false, message: '', onConfirm: null });
+                }}
+              >
+                Confirm
+              </button>
             </div>
           </div>
         </div>

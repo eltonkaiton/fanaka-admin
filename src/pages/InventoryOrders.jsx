@@ -16,8 +16,8 @@ import {
   IoInformationCircleOutline,
   IoTimeOutline,
   IoRefresh,
-  IoSearchOutline,        // NEW
-  IoReceiptOutline,       // NEW
+  IoSearchOutline,
+  IoReceiptOutline,
 } from "react-icons/io5";
 import axios from "axios";
 
@@ -44,6 +44,10 @@ styleSheet.innerText = `
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
 `;
 document.head.appendChild(styleSheet);
 
@@ -62,7 +66,23 @@ export default function FinanceOrders() {
     notes: "",
   });
   const [filterStatus, setFilterStatus] = useState("All");
-  const [searchTerm, setSearchTerm] = useState(""); // NEW search state
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Toast state
+  const [toasts, setToasts] = useState([]);
+  const showToast = (message, type = "info", duration = 3000) => {
+    const id = Date.now() + Math.random();
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration);
+  };
+  const removeToast = id => setToasts(prev => prev.filter(t => t.id !== id));
+
+  // Confirm modal state
+  const [confirmModal, setConfirmModal] = useState({
+    show: false,
+    message: "",
+    onConfirm: null,
+  });
 
   const fetchOrders = async (status = "All") => {
     try {
@@ -86,7 +106,7 @@ export default function FinanceOrders() {
       }
     } catch (error) {
       console.log(error.message);
-      alert("Failed to load payments");
+      showToast("Failed to load payments", "error");
     } finally {
       setLoading(false);
     }
@@ -96,7 +116,6 @@ export default function FinanceOrders() {
     fetchOrders(filterStatus);
   }, [filterStatus]);
 
-  // NEW: filter orders based on search term
   const filteredOrders = orders.filter((order) => {
     const itemName = order.item?.name || order.itemName || "";
     const supplierName = order.supplier?.fullName || order.supplierName || "";
@@ -110,78 +129,73 @@ export default function FinanceOrders() {
   });
 
   const handleApprovePayment = (order) => {
-    setSelectedOrder(order);
-    if (
-      !window.confirm(
-        `Approve payment of KES ${
-          order.payment?.amountPaid || order.totalCost
-        } for ${order.itemName}?`
-      )
-    )
-      return;
-    (async () => {
-      try {
-        setProcessingPayment(true);
-        const userData = {
-          userId: "finance_user_001",
-          userName: "Finance Officer",
-        };
-        await axios.put(
-          `${API_BASE_URL}/api/orders/${order._id}/approve-payment`,
-          userData
-        );
-        alert("Payment request approved");
-        fetchOrders(filterStatus);
-        setPaymentProcessingModal(true);
-        setPaymentData({
-          paymentMethod: order.payment?.paymentMethod || "Bank Transfer",
-          transactionId: "",
-          amountPaid: order.payment?.amountPaid || order.totalCost,
-          notes: "",
-        });
-      } catch (error) {
-        console.log("Approve error:", error.response?.data || error.message);
-        alert(
-          error.response?.data?.message || "Failed to approve payment"
-        );
-      } finally {
-        setProcessingPayment(false);
-      }
-    })();
+    setConfirmModal({
+      show: true,
+      message: `Approve payment of KES ${order.payment?.amountPaid || order.totalCost} for ${order.itemName}?`,
+      onConfirm: async () => {
+        try {
+          setProcessingPayment(true);
+          const userData = {
+            userId: "finance_user_001",
+            userName: "Finance Officer",
+          };
+          await axios.put(
+            `${API_BASE_URL}/api/orders/${order._id}/approve-payment`,
+            userData
+          );
+          showToast("Payment request approved", "success");
+          fetchOrders(filterStatus);
+          setPaymentProcessingModal(true);
+          setPaymentData({
+            paymentMethod: order.payment?.paymentMethod || "Bank Transfer",
+            transactionId: "",
+            amountPaid: order.payment?.amountPaid || order.totalCost,
+            notes: "",
+          });
+        } catch (error) {
+          console.log("Approve error:", error.response?.data || error.message);
+          showToast(error.response?.data?.message || "Failed to approve payment", "error");
+        } finally {
+          setProcessingPayment(false);
+        }
+      },
+    });
   };
 
   const handleRejectPayment = (order) => {
-    if (!window.confirm(`Reject payment request for ${order.itemName}?`))
-      return;
-    (async () => {
-      try {
-        await axios.put(
-          `${API_BASE_URL}/api/orders/${order._id}/reject-payment`,
-          {
-            userId: "finance_user_001",
-            userName: "Finance Officer",
-            reason: "Payment request rejected by finance department",
-          }
-        );
-        alert("Payment request rejected");
-        fetchOrders(filterStatus);
-      } catch (error) {
-        console.log("Reject error:", error.response?.data || error.message);
-        alert(error.response?.data?.message || "Failed to reject payment");
-      }
-    })();
+    setConfirmModal({
+      show: true,
+      message: `Reject payment request for ${order.itemName}?`,
+      onConfirm: async () => {
+        try {
+          await axios.put(
+            `${API_BASE_URL}/api/orders/${order._id}/reject-payment`,
+            {
+              userId: "finance_user_001",
+              userName: "Finance Officer",
+              reason: "Payment request rejected by finance department",
+            }
+          );
+          showToast("Payment request rejected", "success");
+          fetchOrders(filterStatus);
+        } catch (error) {
+          console.log("Reject error:", error.response?.data || error.message);
+          showToast(error.response?.data?.message || "Failed to reject payment", "error");
+        }
+      },
+    });
   };
 
   const handleProcessPayment = async () => {
     if (!selectedOrder) return;
 
     if (!paymentData.paymentMethod) {
-      alert("Please select a payment method");
+      showToast("Please select a payment method", "warning");
       return;
     }
 
     if (paymentData.paymentMethod !== "Cash" && !paymentData.transactionId) {
-      alert("Please enter a transaction/reference ID");
+      showToast("Please enter a transaction/reference ID", "warning");
       return;
     }
 
@@ -201,7 +215,7 @@ export default function FinanceOrders() {
         paymentDetails
       );
 
-      alert("Payment processed successfully and marked as paid");
+      showToast("Payment processed successfully and marked as paid", "success");
       setPaymentProcessingModal(false);
       setPaymentData({
         paymentMethod: "Bank Transfer",
@@ -213,38 +227,39 @@ export default function FinanceOrders() {
       fetchOrders(filterStatus);
     } catch (error) {
       console.log("Process payment error:", error.response?.data || error.message);
-      alert(error.response?.data?.message || "Failed to process payment");
+      showToast(error.response?.data?.message || "Failed to process payment", "error");
     } finally {
       setProcessingPayment(false);
     }
   };
 
   const handleMarkAsPaid = (order) => {
-    if (!window.confirm("Mark this payment as fully paid? This will close the order."))
-      return;
-    (async () => {
-      try {
-        setProcessingPayment(true);
-        await axios.put(
-          `${API_BASE_URL}/api/orders/${order._id}/mark-paid`,
-          {
-            paymentMethod: order.payment?.paymentMethod || "Bank Transfer",
-            transactionId: order.payment?.transactionId || "",
-            notes: "Marked as paid by finance department",
-          }
-        );
-        alert("Order marked as paid");
-        fetchOrders(filterStatus);
-      } catch (error) {
-        console.log("Mark paid error:", error.response?.data || error.message);
-        alert(error.response?.data?.message || "Failed to mark as paid");
-      } finally {
-        setProcessingPayment(false);
-      }
-    })();
+    setConfirmModal({
+      show: true,
+      message: "Mark this payment as fully paid? This will close the order.",
+      onConfirm: async () => {
+        try {
+          setProcessingPayment(true);
+          await axios.put(
+            `${API_BASE_URL}/api/orders/${order._id}/mark-paid`,
+            {
+              paymentMethod: order.payment?.paymentMethod || "Bank Transfer",
+              transactionId: order.payment?.transactionId || "",
+              notes: "Marked as paid by finance department",
+            }
+          );
+          showToast("Order marked as paid", "success");
+          fetchOrders(filterStatus);
+        } catch (error) {
+          console.log("Mark paid error:", error.response?.data || error.message);
+          showToast(error.response?.data?.message || "Failed to mark as paid", "error");
+        } finally {
+          setProcessingPayment(false);
+        }
+      },
+    });
   };
 
-  // NEW: Receipt generation function
   const viewReceipt = (order) => {
     const itemName = order.item?.name || order.itemName || 'N/A';
     const supplierName = order.supplier?.fullName || order.supplierName || 'N/A';
@@ -310,16 +325,11 @@ export default function FinanceOrders() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Submitted":
-        return "#f39c12";
-      case "Approved":
-        return "#3498db";
-      case "Rejected":
-        return "#e74c3c";
-      case "Paid":
-        return "#2ecc71";
-      default:
-        return "#f39c12";
+      case "Submitted": return "#f39c12";
+      case "Approved": return "#3498db";
+      case "Rejected": return "#e74c3c";
+      case "Paid": return "#2ecc71";
+      default: return "#f39c12";
     }
   };
 
@@ -327,7 +337,108 @@ export default function FinanceOrders() {
     return orders.filter((order) => order.payment?.status === status).length;
   };
 
+  const ToastContainer = () => (
+    <div style={styles.toastContainer}>
+      {toasts.map(toast => (
+        <div key={toast.id} style={{...styles.toast, ...styles[`toast${toast.type}`]}}>
+          <span>{toast.message}</span>
+          <button onClick={() => removeToast(toast.id)} style={styles.toastClose}>✕</button>
+        </div>
+      ))}
+    </div>
+  );
+
+  const ConfirmModal = () => confirmModal.show && (
+    <div style={styles.modalOverlay} onClick={() => setConfirmModal({ ...confirmModal, show: false })}>
+      <div style={styles.confirmModal} onClick={e => e.stopPropagation()}>
+        <h3>Confirm Action</h3>
+        <p>{confirmModal.message}</p>
+        <div style={styles.confirmButtons}>
+          <button style={styles.cancelBtn} onClick={() => setConfirmModal({ ...confirmModal, show: false })}>Cancel</button>
+          <button style={styles.confirmBtn} onClick={() => {
+            confirmModal.onConfirm();
+            setConfirmModal({ ...confirmModal, show: false });
+          }}>Confirm</button>
+        </div>
+      </div>
+    </div>
+  );
+
   const styles = {
+    toastContainer: {
+      position: "fixed",
+      top: 20,
+      right: 20,
+      zIndex: 2000,
+      display: "flex",
+      flexDirection: "column",
+      gap: 10,
+    },
+    toast: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      minWidth: 250,
+      maxWidth: 400,
+      padding: "12px 16px",
+      borderRadius: 8,
+      color: "#fff",
+      fontSize: 14,
+      fontWeight: 500,
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      animation: "slideIn 0.3s ease",
+    },
+    toastinfo: { backgroundColor: "#2196F3" },
+    toastsuccess: { backgroundColor: "#4CAF50" },
+    toasterror: { backgroundColor: "#F44336" },
+    toastwarning: { backgroundColor: "#FF9800" },
+    toastClose: {
+      background: "none",
+      border: "none",
+      cursor: "pointer",
+      marginLeft: 12,
+      padding: 0,
+      color: "#fff",
+      fontSize: 18,
+      lineHeight: 1,
+    },
+    confirmModal: {
+      backgroundColor: "#fff",
+      borderRadius: 12,
+      padding: 24,
+      maxWidth: 400,
+      width: "90%",
+      margin: "auto",
+      boxShadow: "0 8px 24px rgba(0,0,0,0.2)",
+    },
+    confirmButtons: {
+      display: "flex",
+      justifyContent: "space-between",
+      gap: 12,
+      marginTop: 20,
+    },
+    cancelBtn: {
+      flex: 1,
+      padding: 12,
+      borderRadius: 8,
+      border: "1px solid #ddd",
+      backgroundColor: "#f5f5f5",
+      fontSize: 16,
+      fontWeight: 500,
+      cursor: "pointer",
+    },
+    confirmBtn: {
+      flex: 1,
+      padding: 12,
+      borderRadius: 8,
+      border: "none",
+      backgroundColor: "#6200EE",
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: 500,
+      cursor: "pointer",
+    },
+    // Keep original styles unchanged (condensed for brevity)
     container: {
       minHeight: "100vh",
       backgroundColor: "#f8f9fa",
@@ -350,7 +461,6 @@ export default function FinanceOrders() {
       color: "#666",
       marginTop: "4px",
     },
-    // NEW search bar styles
     searchWrapper: {
       display: "flex",
       alignItems: "center",
@@ -471,7 +581,7 @@ export default function FinanceOrders() {
       marginTop: "12px",
       display: "flex",
       gap: "8px",
-      flexWrap: "wrap", // to accommodate extra button
+      flexWrap: "wrap",
     },
     actionButton: {
       flex: 1,
@@ -486,27 +596,11 @@ export default function FinanceOrders() {
       fontWeight: "600",
       fontSize: "14px",
     },
-    approveButton: {
-      backgroundColor: "#2ecc71",
-      color: "#fff",
-    },
-    rejectButton: {
-      backgroundColor: "#e74c3c",
-      color: "#fff",
-    },
-    processButton: {
-      backgroundColor: "#3498db",
-      color: "#fff",
-    },
-    markPaidButton: {
-      backgroundColor: "#9b59b6",
-      color: "#fff",
-    },
-    receiptButton: { // NEW
-      backgroundColor: "#fff",
-      border: "1px solid #6200EE",
-      color: "#6200EE",
-    },
+    approveButton: { backgroundColor: "#2ecc71", color: "#fff" },
+    rejectButton: { backgroundColor: "#e74c3c", color: "#fff" },
+    processButton: { backgroundColor: "#3498db", color: "#fff" },
+    markPaidButton: { backgroundColor: "#9b59b6", color: "#fff" },
+    receiptButton: { backgroundColor: "#fff", border: "1px solid #6200EE", color: "#6200EE" },
     paidStatus: {
       flex: 1,
       display: "flex",
@@ -516,18 +610,8 @@ export default function FinanceOrders() {
       backgroundColor: "#e8f6f3",
       borderRadius: "8px",
     },
-    paidText: {
-      fontSize: "14px",
-      fontWeight: "600",
-      color: "#2ecc71",
-      marginTop: "4px",
-    },
-    paidDate: {
-      fontSize: "12px",
-      color: "#666",
-      marginTop: "2px",
-      textAlign: "center",
-    },
+    paidText: { fontSize: "14px", fontWeight: "600", color: "#2ecc71", marginTop: "4px" },
+    paidDate: { fontSize: "12px", color: "#666", marginTop: "2px", textAlign: "center" },
     rejectedStatus: {
       flex: 1,
       display: "flex",
@@ -537,18 +621,8 @@ export default function FinanceOrders() {
       backgroundColor: "#fde8e8",
       borderRadius: "8px",
     },
-    rejectedText: {
-      fontSize: "14px",
-      fontWeight: "600",
-      color: "#e74c3c",
-      marginTop: "4px",
-    },
-    rejectedDate: {
-      fontSize: "12px",
-      color: "#666",
-      marginTop: "2px",
-      textAlign: "center",
-    },
+    rejectedText: { fontSize: "14px", fontWeight: "600", color: "#e74c3c", marginTop: "4px" },
+    rejectedDate: { fontSize: "12px", color: "#666", marginTop: "2px", textAlign: "center" },
     emptyContainer: {
       display: "flex",
       flexDirection: "column",
@@ -556,20 +630,8 @@ export default function FinanceOrders() {
       justifyContent: "center",
       paddingTop: "60px",
     },
-    emptyText: {
-      fontSize: "18px",
-      color: "#777",
-      fontWeight: "600",
-      marginTop: "16px",
-      textAlign: "center",
-    },
-    emptySubtext: {
-      fontSize: "14px",
-      color: "#aaa",
-      marginTop: "8px",
-      textAlign: "center",
-      padding: "0 20px",
-    },
+    emptyText: { fontSize: "18px", color: "#777", fontWeight: "600", marginTop: "16px", textAlign: "center" },
+    emptySubtext: { fontSize: "14px", color: "#aaa", marginTop: "8px", textAlign: "center", padding: "0 20px" },
     modalOverlay: {
       position: "fixed",
       top: 0,
@@ -599,61 +661,21 @@ export default function FinanceOrders() {
       padding: "20px",
       borderBottom: "1px solid #eee",
     },
-    modalTitle: {
-      fontSize: "20px",
-      fontWeight: "bold",
-      color: "#333",
-      margin: 0,
-    },
-    modalClose: {
-      background: "none",
-      border: "none",
-      cursor: "pointer",
-    },
-    modalContent: {
-      padding: "20px",
-      overflowY: "auto",
-      maxHeight: "500px",
-    },
+    modalTitle: { fontSize: "20px", fontWeight: "bold", color: "#333", margin: 0 },
+    modalClose: { background: "none", border: "none", cursor: "pointer" },
+    modalContent: { padding: "20px", overflowY: "auto", maxHeight: "500px" },
     paymentSummary: {
       backgroundColor: "#f8f9fa",
       borderRadius: "12px",
       padding: "16px",
       marginBottom: "20px",
     },
-    paymentSummaryTitle: {
-      fontSize: "18px",
-      fontWeight: "bold",
-      color: "#333",
-      marginBottom: "12px",
-    },
-    paymentDetailRow: {
-      display: "flex",
-      justifyContent: "space-between",
-      marginBottom: "8px",
-    },
-    paymentDetailLabel: {
-      fontSize: "14px",
-      color: "#666",
-      flex: 1,
-    },
-    paymentDetailValue: {
-      fontSize: "14px",
-      color: "#333",
-      fontWeight: "500",
-      flex: 2,
-      textAlign: "right",
-    },
-    inputGroup: {
-      marginBottom: "20px",
-    },
-    inputLabel: {
-      fontSize: "15px",
-      fontWeight: "600",
-      color: "#333",
-      marginBottom: "8px",
-      display: "block",
-    },
+    paymentSummaryTitle: { fontSize: "18px", fontWeight: "bold", color: "#333", marginBottom: "12px" },
+    paymentDetailRow: { display: "flex", justifyContent: "space-between", marginBottom: "8px" },
+    paymentDetailLabel: { fontSize: "14px", color: "#666", flex: 1 },
+    paymentDetailValue: { fontSize: "14px", color: "#333", fontWeight: "500", flex: 2, textAlign: "right" },
+    inputGroup: { marginBottom: "20px" },
+    inputLabel: { fontSize: "15px", fontWeight: "600", color: "#333", marginBottom: "8px", display: "block" },
     select: {
       width: "100%",
       padding: "12px",
@@ -670,21 +692,9 @@ export default function FinanceOrders() {
       backgroundColor: "#f9f9f9",
       overflow: "hidden",
     },
-    inputIcon: {
-      padding: "0 16px",
-    },
-    input: {
-      flex: 1,
-      padding: "12px",
-      fontSize: "16px",
-      border: "none",
-      outline: "none",
-      background: "none",
-    },
-    textArea: {
-      minHeight: "80px",
-      resize: "vertical",
-    },
+    inputIcon: { padding: "0 16px" },
+    input: { flex: 1, padding: "12px", fontSize: "16px", border: "none", outline: "none", background: "none" },
+    textArea: { minHeight: "80px", resize: "vertical" },
     infoBox: {
       display: "flex",
       alignItems: "flex-start",
@@ -694,11 +704,7 @@ export default function FinanceOrders() {
       borderRadius: "8px",
       marginTop: "10px",
     },
-    infoText: {
-      flex: 1,
-      fontSize: "14px",
-      color: "#3498db",
-    },
+    infoText: { flex: 1, fontSize: "14px", color: "#3498db" },
     modalFooter: {
       display: "flex",
       padding: "20px",
@@ -731,14 +737,8 @@ export default function FinanceOrders() {
       fontWeight: "600",
       cursor: "pointer",
     },
-    createButtonDisabled: {
-      backgroundColor: "#b39ddb",
-      opacity: 0.7,
-      cursor: "not-allowed",
-    },
-    createButtonText: {
-      color: "#fff",
-    },
+    createButtonDisabled: { backgroundColor: "#b39ddb", opacity: 0.7, cursor: "not-allowed" },
+    createButtonText: { color: "#fff" },
   };
 
   if (loading) {
@@ -752,12 +752,12 @@ export default function FinanceOrders() {
 
   return (
     <div style={styles.container}>
-      {/* Header */}
+      <ToastContainer />
+      <ConfirmModal />
+
       <div style={styles.header}>
         <h1 style={styles.headerTitle}>Finance - Payment Management</h1>
         <p style={styles.headerSubtitle}>All payment requests and statuses</p>
-
-        {/* NEW Search Bar */}
         <div style={styles.searchWrapper}>
           <IoSearchOutline size={18} color="#666" />
           <input
@@ -770,7 +770,6 @@ export default function FinanceOrders() {
         </div>
       </div>
 
-      {/* Filter Tabs */}
       <div style={styles.filterContainer}>
         <div style={styles.filterTabs}>
           {["All", "Submitted", "Approved", "Paid", "Rejected"].map(
@@ -791,7 +790,6 @@ export default function FinanceOrders() {
         </div>
       </div>
 
-      {/* Orders List */}
       <div style={styles.listContainer}>
         {filteredOrders.length === 0 ? (
           <div style={styles.emptyContainer}>
@@ -812,8 +810,7 @@ export default function FinanceOrders() {
         ) : (
           filteredOrders.map((order) => {
             const payment = order.payment || {};
-            const total =
-              order.totalCost || order.quantity * order.unitPrice;
+            const total = order.totalCost || order.quantity * order.unitPrice;
             return (
               <div key={order._id} style={styles.card}>
                 <div style={styles.cardHeader}>
@@ -1002,7 +999,6 @@ export default function FinanceOrders() {
                     </div>
                   )}
 
-                  {/* NEW Receipt button - always visible */}
                   <button
                     style={{ ...styles.actionButton, ...styles.receiptButton }}
                     onClick={() => viewReceipt(order)}
@@ -1017,7 +1013,6 @@ export default function FinanceOrders() {
         )}
       </div>
 
-      {/* Payment Processing Modal */}
       {paymentProcessingModal && selectedOrder && (
         <div
           style={styles.modalOverlay}

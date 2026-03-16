@@ -86,6 +86,19 @@ export default function Order() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Toast and confirmation state
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+  const [confirm, setConfirm] = useState({ show: false, message: '', onConfirm: null });
+
+  const showToast = (message, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: '', type: 'info' }), 3000);
+  };
+
+  const showConfirm = (message, onConfirm) => {
+    setConfirm({ show: true, message, onConfirm });
+  };
+
   const [newOrder, setNewOrder] = useState({
     item: '',
     itemName: '',
@@ -104,7 +117,7 @@ export default function Order() {
       setOrders(res.data.orders || []);
     } catch (err) {
       console.log('Error fetching orders:', err.message);
-      alert('Failed to load orders');
+      showToast('Failed to load orders', 'error');
       setOrders([]);
     } finally {
       setLoading(false);
@@ -118,7 +131,7 @@ export default function Order() {
       setItems(res.data || []);
     } catch (err) {
       console.log('Error fetching items:', err.message);
-      alert('Failed to load items');
+      showToast('Failed to load items', 'error');
       setItems([]);
     }
   };
@@ -129,7 +142,7 @@ export default function Order() {
       setSuppliers(res.data || []);
     } catch (err) {
       console.log('Error fetching suppliers:', err.message);
-      alert('Failed to load suppliers');
+      showToast('Failed to load suppliers', 'error');
       setSuppliers([]);
     }
   };
@@ -148,27 +161,29 @@ export default function Order() {
   };
 
   const markAsDelivered = async (id) => {
-    if (!window.confirm('Mark this order as delivered?')) return;
-    try {
-      await axios.put(`${API}/api/orders/${id}/deliver`);
-      alert('Order marked as delivered');
-      fetchOrders();
-    } catch (err) {
-      alert('Failed to mark as delivered');
-    }
+    showConfirm('Mark this order as delivered?', async () => {
+      try {
+        await axios.put(`${API}/api/orders/${id}/deliver`);
+        showToast('Order marked as delivered', 'success');
+        fetchOrders();
+      } catch (err) {
+        showToast('Failed to mark as delivered', 'error');
+      }
+    });
   };
 
   const markAsReceived = async (id) => {
-    if (!window.confirm('Mark this order as received in inventory?')) return;
-    try {
-      await axios.put(`${API}/api/orders/${id}/receive`);
-      alert('Order marked as received. Ready for payment submission.');
-      fetchOrders();
-      fetchItems();
-    } catch (err) {
-      console.log('Error marking as received:', err.message);
-      alert(err.response?.data?.message || 'Failed to mark order as received');
-    }
+    showConfirm('Mark this order as received in inventory?', async () => {
+      try {
+        await axios.put(`${API}/api/orders/${id}/receive`);
+        showToast('Order marked as received. Ready for payment submission.', 'success');
+        fetchOrders();
+        fetchItems();
+      } catch (err) {
+        console.log('Error marking as received:', err.message);
+        showToast(err.response?.data?.message || 'Failed to mark order as received', 'error');
+      }
+    });
   };
 
   const submitPaymentRequest = (order) => {
@@ -189,13 +204,13 @@ export default function Order() {
         notes: 'Payment request submitted by inventory department',
       };
       await axios.put(`${API}/api/orders/${selectedOrder._id}/submit-payment`, paymentRequest);
-      alert('Payment request submitted to Finance Department.');
+      showToast('Payment request submitted to Finance Department.', 'success');
       setPaymentModalVisible(false);
       setSelectedOrder(null);
       fetchOrders();
     } catch (err) {
       console.log('Submit payment error:', err.message);
-      alert(err.response?.data?.message || 'Failed to submit payment request');
+      showToast(err.response?.data?.message || 'Failed to submit payment request', 'error');
     }
   };
 
@@ -251,11 +266,11 @@ export default function Order() {
   const createOrder = async () => {
     const { item, supplier, quantity, unitPrice } = newOrder;
     if (!item || !supplier || !quantity || !unitPrice) {
-      alert('Please fill all required fields');
+      showToast('Please fill all required fields', 'error');
       return;
     }
     if (parseFloat(quantity) <= 0 || parseFloat(unitPrice) <= 0) {
-      alert('Quantity and unit price must be greater than 0');
+      showToast('Quantity and unit price must be greater than 0', 'error');
       return;
     }
     try {
@@ -266,13 +281,13 @@ export default function Order() {
         quantity: parseFloat(quantity),
         unitPrice: parseFloat(unitPrice),
       });
-      alert('Order created successfully');
+      showToast('Order created successfully', 'success');
       setModalVisible(false);
       resetForm();
       fetchOrders();
     } catch (err) {
       console.log('Create order error:', err.response?.data || err.message);
-      alert(err.response?.data?.message || 'Failed to create order');
+      showToast(err.response?.data?.message || 'Failed to create order', 'error');
     } finally {
       setIsCreating(false);
     }
@@ -660,6 +675,46 @@ export default function Order() {
               <button style={styles.createButton} onClick={handlePaymentSubmit}>
                 <IoSendOutline size={20} color="#fff" />
                 <span style={styles.createButtonText}>Submit to Finance</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div
+          style={{
+            ...styles.toast,
+            ...(toast.type === 'success' ? styles.toastSuccess : {}),
+            ...(toast.type === 'error' ? styles.toastError : {}),
+            ...(toast.type === 'info' ? styles.toastInfo : {}),
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirm.show && (
+        <div style={styles.confirmOverlay} onClick={() => setConfirm({ show: false, message: '', onConfirm: null })}>
+          <div style={styles.confirmContent} onClick={(e) => e.stopPropagation()}>
+            <p>{confirm.message}</p>
+            <div style={styles.confirmButtons}>
+              <button
+                style={styles.cancelButton}
+                onClick={() => setConfirm({ show: false, message: '', onConfirm: null })}
+              >
+                Cancel
+              </button>
+              <button
+                style={styles.confirmButton}
+                onClick={() => {
+                  confirm.onConfirm();
+                  setConfirm({ show: false, message: '', onConfirm: null });
+                }}
+              >
+                Confirm
               </button>
             </div>
           </div>
@@ -1130,6 +1185,59 @@ const styles = {
   },
   createButtonText: {
     color: '#fff',
+  },
+  // Toast styles
+  toast: {
+    position: 'fixed',
+    top: '20px',
+    right: '20px',
+    padding: '12px 20px',
+    borderRadius: '8px',
+    color: '#fff',
+    fontWeight: '500',
+    zIndex: 2000,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    maxWidth: '300px',
+  },
+  toastSuccess: { backgroundColor: '#4CAF50' },
+  toastError: { backgroundColor: '#F44336' },
+  toastInfo: { backgroundColor: '#2196F3' },
+  // Confirm modal styles
+  confirmOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1500,
+  },
+  confirmContent: {
+    backgroundColor: '#fff',
+    borderRadius: '12px',
+    padding: '24px',
+    maxWidth: '400px',
+    width: '90%',
+    textAlign: 'center',
+  },
+  confirmButtons: {
+    display: 'flex',
+    gap: '12px',
+    marginTop: '20px',
+    justifyContent: 'center',
+  },
+  confirmButton: {
+    flex: 1,
+    backgroundColor: '#6200EE',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '12px',
+    fontWeight: '600',
+    cursor: 'pointer',
   },
 };
 

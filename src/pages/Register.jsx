@@ -15,26 +15,34 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Toast state
+  const [toast, setToast] = useState({ show: false, message: "", type: "info" });
+
+  const showToast = (message, type = "info") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "info" }), 3000);
+  };
+
   const handleRegister = async () => {
     // Basic validation
     if (!username || !fullName || !email || !phone || !password || !confirmPassword) {
-      alert("All fields are required");
+      showToast("All fields are required", "error");
       return;
     }
 
     if (phone.length < 10) {
-      alert("Phone number must be at least 10 digits");
+      showToast("Phone number must be at least 10 digits", "error");
       return;
     }
 
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
+      showToast("Passwords do not match", "error");
       return;
     }
 
     setLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/users/register`, {
+      await axios.post(`${API_BASE_URL}/api/users/register`, {
         username,
         fullName,
         email,
@@ -43,11 +51,11 @@ export default function Register() {
         role: "Audience", // default role for viewer/customer
       });
 
-      alert("Registration completed. You can now login.");
-      navigate("/login");
+      showToast("Registration completed. You can now login.", "success");
+      setTimeout(() => navigate("/login"), 1500);
     } catch (error) {
       console.log("Registration error:", error.response?.data || error.message);
-      alert(error.response?.data?.error || "Something went wrong");
+      showToast(error.response?.data?.error || "Something went wrong", "error");
     } finally {
       setLoading(false);
     }
@@ -140,11 +148,25 @@ export default function Register() {
           </span>
         </p>
       </div>
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div
+          style={{
+            ...styles.toast,
+            ...(toast.type === "success" ? styles.toastSuccess : {}),
+            ...(toast.type === "error" ? styles.toastError : {}),
+            ...(toast.type === "info" ? styles.toastInfo : {}),
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 }
 
-// Inline styles
+// Inline styles (updated with toast styles)
 const styles = {
   container: {
     minHeight: "100vh",
@@ -154,6 +176,7 @@ const styles = {
     backgroundColor: "#f8f9fa",
     padding: "20px",
     fontFamily: "system-ui, -apple-system, sans-serif",
+    position: "relative",
   },
   formContainer: {
     backgroundColor: "#fff",
@@ -212,4 +235,20 @@ const styles = {
     cursor: "pointer",
     textDecoration: "underline",
   },
+  // Toast styles
+  toast: {
+    position: "fixed",
+    top: "20px",
+    right: "20px",
+    padding: "12px 20px",
+    borderRadius: "8px",
+    color: "#fff",
+    fontWeight: "500",
+    zIndex: 2000,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    maxWidth: "300px",
+  },
+  toastSuccess: { backgroundColor: "#4CAF50" },
+  toastError: { backgroundColor: "#F44336" },
+  toastInfo: { backgroundColor: "#2196F3" },
 };

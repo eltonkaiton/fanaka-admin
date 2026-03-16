@@ -30,6 +30,19 @@ export default function ManagePlays() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Toast and confirmation state
+  const [toast, setToast] = useState({ show: false, message: "", type: "info" });
+  const [confirm, setConfirm] = useState({ show: false, message: "", onConfirm: null });
+
+  const showToast = (message, type = "info") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ show: false, message: "", type: "info" }), 3000);
+  };
+
+  const showConfirm = (message, onConfirm) => {
+    setConfirm({ show: true, message, onConfirm });
+  };
+
   const getFullImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith("http")) return imagePath;
@@ -47,7 +60,7 @@ export default function ManagePlays() {
       setPlays(playsWithFullUrls);
       setFilteredPlays(playsWithFullUrls);
     } catch (error) {
-      window.alert("Failed to fetch plays.");
+      showToast("Failed to fetch plays.", "error");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -77,14 +90,15 @@ export default function ManagePlays() {
   };
 
   const handleDelete = async (id, title) => {
-    if (window.confirm(`Delete "${title}"?`)) {
+    showConfirm(`Delete "${title}"?`, async () => {
       try {
         await axios.delete(`${API_BASE_URL}/api/plays/${id}`);
+        showToast("Play deleted successfully.", "success");
         fetchPlays();
       } catch (error) {
-        window.alert("Failed to delete.");
+        showToast("Failed to delete play.", "error");
       }
-    }
+    });
   };
 
   const handleApproveMaterial = async (playId, requestId) => {
@@ -92,9 +106,10 @@ export default function ManagePlays() {
       await axios.patch(
         `${API_BASE_URL}/api/plays/${playId}/material-requests/${requestId}/approve`
       );
+      showToast("Request approved.", "success");
       fetchPlays();
     } catch (error) {
-      window.alert("Failed to approve.");
+      showToast("Failed to approve request.", "error");
     }
   };
 
@@ -103,9 +118,10 @@ export default function ManagePlays() {
       await axios.patch(
         `${API_BASE_URL}/api/plays/${playId}/material-requests/${requestId}/reject`
       );
+      showToast("Request rejected.", "success");
       fetchPlays();
     } catch (error) {
-      window.alert("Failed to reject.");
+      showToast("Failed to reject request.", "error");
     }
   };
 
@@ -247,7 +263,6 @@ export default function ManagePlays() {
                     <button
                       style={styles.assignButton}
                       onClick={() =>
-                        // ✅ FIXED: add "/play-manager/" prefix to match nested route
                         navigate("/play-manager/assign-actors", { state: { playId: play._id, playTitle: play.title } })
                       }
                     >
@@ -343,11 +358,51 @@ export default function ManagePlays() {
           <div style={styles.spinner}></div>
         </div>
       )}
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div
+          style={{
+            ...styles.toast,
+            ...(toast.type === "success" ? styles.toastSuccess : {}),
+            ...(toast.type === "error" ? styles.toastError : {}),
+            ...(toast.type === "info" ? styles.toastInfo : {}),
+          }}
+        >
+          {toast.message}
+        </div>
+      )}
+
+      {/* Confirmation Modal */}
+      {confirm.show && (
+        <div style={styles.confirmOverlay} onClick={() => setConfirm({ show: false, message: "", onConfirm: null })}>
+          <div style={styles.confirmContent} onClick={(e) => e.stopPropagation()}>
+            <p>{confirm.message}</p>
+            <div style={styles.confirmButtons}>
+              <button
+                style={styles.cancelBtn}
+                onClick={() => setConfirm({ show: false, message: "", onConfirm: null })}
+              >
+                Cancel
+              </button>
+              <button
+                style={styles.saveBtn}
+                onClick={() => {
+                  confirm.onConfirm();
+                  setConfirm({ show: false, message: "", onConfirm: null });
+                }}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-// Inline styles (unchanged)
+// Inline styles (updated with toast & confirm styles)
 const styles = {
   container: {
     backgroundColor: "#f8f9fa",
@@ -712,6 +767,68 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     zIndex: 999,
+  },
+  // Toast styles
+  toast: {
+    position: "fixed",
+    top: "20px",
+    right: "20px",
+    padding: "12px 20px",
+    borderRadius: "8px",
+    color: "#fff",
+    fontWeight: "500",
+    zIndex: 2000,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+    maxWidth: "300px",
+  },
+  toastSuccess: { backgroundColor: "#4CAF50" },
+  toastError: { backgroundColor: "#F44336" },
+  toastInfo: { backgroundColor: "#2196F3" },
+  // Confirm modal styles
+  confirmOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1500,
+  },
+  confirmContent: {
+    backgroundColor: "#fff",
+    borderRadius: "12px",
+    padding: "24px",
+    maxWidth: "400px",
+    width: "90%",
+    textAlign: "center",
+  },
+  confirmButtons: {
+    display: "flex",
+    gap: "12px",
+    marginTop: "20px",
+    justifyContent: "center",
+  },
+  cancelBtn: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+    border: "none",
+    borderRadius: "8px",
+    padding: "12px",
+    fontWeight: "600",
+    cursor: "pointer",
+  },
+  saveBtn: {
+    flex: 1,
+    backgroundColor: "#6200EE",
+    color: "#fff",
+    border: "none",
+    borderRadius: "8px",
+    padding: "12px",
+    fontWeight: "600",
+    cursor: "pointer",
   },
 };
 
