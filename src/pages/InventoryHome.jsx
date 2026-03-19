@@ -9,7 +9,7 @@ import {
   IoCheckmarkCircleOutline, IoCheckmarkDoneCircleOutline,
   IoCubeOutline, IoCartOutline, IoAlertCircleOutline,
   IoPersonCircleOutline, IoPricetagOutline, IoCalendarOutline,
-  IoBusinessOutline
+  IoBusinessOutline, IoCalculatorOutline
 } from 'react-icons/io5';
 
 const API_BASE = 'https://fanaka-server-1.onrender.com';
@@ -23,10 +23,19 @@ export default function InventoryHome() {
   const [view, setView] = useState('dashboard'); // dashboard|approved|processing|prepared|items
   const [items, setItems] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
   const [itemModal, setItemModal] = useState(false);
   const [orderModal, setOrderModal] = useState(false);
   const [newItem, setNewItem] = useState({ name: '', category: '', quantity: '', minThreshold: '', unit: '' });
-  const [orderData, setOrderData] = useState({ itemId: '', itemName: '', quantity: '', supplier: '' });
+  const [orderData, setOrderData] = useState({
+    item: '',
+    itemName: '',
+    supplier: '',
+    supplierName: '',
+    quantity: '',
+    unitPrice: '',
+    totalCost: ''
+  });
 
   // Toast and confirmation state
   const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
@@ -67,7 +76,6 @@ export default function InventoryHome() {
   const fetchItems = async () => {
     try {
       const res = await axios.get(`${API_BASE}/api/items`);
-      // Ensure we have a consistent field for stock: use currentStock if available, else quantity
       const itemsData = (res.data || []).map(item => ({
         ...item,
         currentStock: item.currentStock !== undefined ? item.currentStock : item.quantity
@@ -91,9 +99,20 @@ export default function InventoryHome() {
     }
   };
 
+  const fetchSuppliers = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/employees/department/supplier`);
+      setSuppliers(res.data || []);
+    } catch (err) {
+      console.log(err);
+      showToast('Failed to load suppliers', 'error');
+      setSuppliers([]);
+    }
+  };
+
   const loadAll = async () => {
     setLoading(true);
-    await Promise.all([fetchPlays(), fetchItems(), fetchOrders()]);
+    await Promise.all([fetchPlays(), fetchItems(), fetchOrders(), fetchSuppliers()]);
     setLoading(false);
     setRefreshing(false);
   };
@@ -169,7 +188,6 @@ export default function InventoryHome() {
       return;
     }
     try {
-      // Send quantity field; backend will store as quantity and possibly currentStock
       await axios.post(`${API_BASE}/api/items`, newItem);
       showToast('Item added', 'success');
       setItemModal(false);
@@ -180,19 +198,50 @@ export default function InventoryHome() {
     }
   };
 
+  // Order helpers
+  const calcTotal = (qty, price) => {
+    const q = parseFloat(qty) || 0;
+    const p = parseFloat(price) || 0;
+    const total = (q * p).toFixed(2);
+    setOrderData(prev => ({ ...prev, totalCost: total }));
+  };
+
+  const resetOrderForm = () => {
+    setOrderData({
+      item: '',
+      itemName: '',
+      supplier: '',
+      supplierName: '',
+      quantity: '',
+      unitPrice: '',
+      totalCost: ''
+    });
+  };
+
   const createOrder = async () => {
-    if (!orderData.itemId || !orderData.quantity || !orderData.supplier) {
-      showToast('Fill all fields', 'error');
+    const { item, supplier, quantity, unitPrice } = orderData;
+    if (!item || !supplier || !quantity || !unitPrice) {
+      showToast('Please fill all required fields', 'error');
+      return;
+    }
+    if (parseFloat(quantity) <= 0 || parseFloat(unitPrice) <= 0) {
+      showToast('Quantity and unit price must be greater than 0', 'error');
       return;
     }
     try {
-      await axios.post(`${API_BASE}/api/orders`, { ...orderData, unitCost: 0, totalCost: 0 });
-      showToast('Order placed', 'success');
+      await axios.post(`${API_BASE}/api/orders`, {
+        item,
+        supplier,
+        quantity: parseFloat(quantity),
+        unitPrice: parseFloat(unitPrice)
+      });
+      showToast('Order placed successfully', 'success');
       setOrderModal(false);
-      setOrderData({ itemId: '', itemName: '', quantity: '', supplier: '' });
-      fetchOrders();
+      resetOrderForm();
+      fetchOrders(); // update pending orders count
     } catch (err) {
-      showToast('Failed to create order', 'error');
+      console.log(err);
+      showToast(err.response?.data?.message || 'Failed to create order', 'error');
     }
   };
 
@@ -209,6 +258,7 @@ export default function InventoryHome() {
     lowStock: items.filter(i => (i.currentStock !== undefined ? i.currentStock : i.quantity) <= (i.minThreshold || 0)).length
   };
 
+  // Styles (unchanged – kept from original)
   const styles = {
     container: { display: 'flex', flexDirection: 'column', height: '100vh', background: '#f8f9fa', fontFamily: 'system-ui,sans-serif' },
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', background: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' },
@@ -263,54 +313,21 @@ export default function InventoryHome() {
     inputGroup: { marginBottom: 15 },
     label: { fontSize: '14px', fontWeight: '600', marginBottom: 5, display: 'block' },
     input: { width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: 8, fontSize: '16px', boxSizing: 'border-box' },
+    select: { width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: 8, fontSize: '16px', backgroundColor: '#f9f9f9', boxSizing: 'border-box' },
     row: { display: 'flex', gap: 10, marginBottom: 15 },
     modalFooter: { display: 'flex', padding: '20px', borderTop: '1px solid #eee', gap: 10 },
     cancelBtn: { flex: 1, background: '#f5f5f5', border: 'none', borderRadius: 8, padding: '12px', fontWeight: '600', cursor: 'pointer' },
     saveBtn: { flex: 1, background: '#6200EE', color: '#fff', border: 'none', borderRadius: 8, padding: '12px', fontWeight: '600', cursor: 'pointer' },
     disabled: { background: '#b39ddb', cursor: 'not-allowed' },
-    // Toast styles
-    toast: {
-      position: 'fixed',
-      top: 20,
-      right: 20,
-      padding: '12px 20px',
-      borderRadius: 8,
-      color: '#fff',
-      fontWeight: '500',
-      zIndex: 2000,
-      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-      maxWidth: '300px'
-    },
+    totalDisplay: { display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f3e5f5', padding: '16px', borderRadius: 8, gap: 12 },
+    totalText: { fontSize: '20px', fontWeight: 'bold', color: '#6200EE' },
+    toast: { position: 'fixed', top: 20, right: 20, padding: '12px 20px', borderRadius: 8, color: '#fff', fontWeight: '500', zIndex: 2000, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', maxWidth: '300px' },
     toastSuccess: { background: '#4CAF50' },
     toastError: { background: '#F44336' },
     toastInfo: { background: '#2196F3' },
-    // Confirm modal styles
-    confirmOverlay: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      background: 'rgba(0,0,0,0.5)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1500
-    },
-    confirmContent: {
-      background: '#fff',
-      borderRadius: 12,
-      padding: 24,
-      maxWidth: '400px',
-      width: '90%',
-      textAlign: 'center'
-    },
-    confirmButtons: {
-      display: 'flex',
-      gap: 12,
-      marginTop: 20,
-      justifyContent: 'center'
-    }
+    confirmOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1500 },
+    confirmContent: { background: '#fff', borderRadius: 12, padding: 24, maxWidth: '400px', width: '90%', textAlign: 'center' },
+    confirmButtons: { display: 'flex', gap: 12, marginTop: 20, justifyContent: 'center' }
   };
 
   const renderDashboard = () => (
@@ -422,7 +439,24 @@ export default function InventoryHome() {
             </div>
             <div style={styles.detailRow}><IoPricetag size={14} /> Category: {i.category || 'Uncategorized'}</div>
             <div style={styles.detailRow}><IoAlertCircle size={14} /> Min Threshold: {i.minThreshold || 'Not set'}</div>
-            {low && <button style={styles.orderBtn} onClick={() => { setOrderData({ itemId: i._id, itemName: i.name, quantity: '', supplier: '' }); setOrderModal(true); }}><IoCart /> Order More</button>}
+            {low && (
+              <button
+                style={styles.orderBtn}
+                onClick={() => {
+                  setOrderData({
+                    ...orderData,
+                    item: i._id,
+                    itemName: i.name,
+                    quantity: '',
+                    unitPrice: '',
+                    totalCost: ''
+                  });
+                  setOrderModal(true);
+                }}
+              >
+                <IoCart /> Order More
+              </button>
+            )}
           </div>
         );
       })}
@@ -512,36 +546,125 @@ export default function InventoryHome() {
         </div>
       </div>}
 
-      {/* Order Modal */}
-      {orderModal && <div style={styles.modalOverlay} onClick={() => setOrderModal(false)}>
-        <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-          <div style={styles.modalHeader}><span style={styles.modalTitle}>Place Order</span><button onClick={() => setOrderModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><IoClose size={24} /></button></div>
-          <div style={styles.modalBody}>
-            <div style={styles.inputGroup}><label style={styles.label}>Select Item *</label>
-              {items.map(i => {
-                const stock = i.currentStock !== undefined ? i.currentStock : i.quantity;
-                return (
-                  <div key={i._id} style={{ ...styles.itemCard, background: orderData.itemId === i._id ? '#6200EE20' : '#f8f9fa', cursor: 'pointer' }} onClick={() => setOrderData({ ...orderData, itemId: i._id, itemName: i.name })}>
-                    <span>{i.name} ({stock} {i.unit || 'pcs'} available)</span>
-                  </div>
-                );
-              })}
-              {!items.length && <p>No items</p>}
+      {/* Enhanced Order Modal */}
+      {orderModal && (
+        <div style={styles.modalOverlay} onClick={() => { setOrderModal(false); resetOrderForm(); }}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <span style={styles.modalTitle}>Place Order</span>
+              <button onClick={() => { setOrderModal(false); resetOrderForm(); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><IoClose size={24} /></button>
             </div>
-            <div style={styles.inputGroup}><label style={styles.label}>Quantity *</label><input style={styles.input} type='number' value={orderData.quantity} onChange={e => setOrderData({ ...orderData, quantity: e.target.value })} /></div>
-            <div style={styles.inputGroup}><label style={styles.label}>Supplier *</label><input style={styles.input} value={orderData.supplier} onChange={e => setOrderData({ ...orderData, supplier: e.target.value })} /></div>
-          </div>
-          <div style={styles.modalFooter}>
-            <button style={styles.cancelBtn} onClick={() => setOrderModal(false)}>Cancel</button>
-            <button style={{ ...styles.saveBtn, ...((!orderData.itemId || !orderData.quantity || !orderData.supplier) && styles.disabled) }} onClick={createOrder} disabled={!orderData.itemId || !orderData.quantity || !orderData.supplier}>Place Order</button>
+            <div style={styles.modalBody}>
+              {/* Item Select */}
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Select Item *</label>
+                <select
+                  style={styles.select}
+                  value={orderData.item}
+                  onChange={(e) => {
+                    const selected = items.find(i => i._id === e.target.value);
+                    setOrderData({
+                      ...orderData,
+                      item: e.target.value,
+                      itemName: selected?.name || ''
+                    });
+                  }}
+                >
+                  <option value="">Choose an item...</option>
+                  {items.map(item => (
+                    <option key={item._id} value={item._id}>
+                      {item.name} ({item.currentStock || item.quantity || 0} {item.unit || 'pcs'} available)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Supplier Select */}
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Select Supplier *</label>
+                <select
+                  style={styles.select}
+                  value={orderData.supplier}
+                  onChange={(e) => {
+                    const selected = suppliers.find(s => s._id === e.target.value);
+                    setOrderData({
+                      ...orderData,
+                      supplier: e.target.value,
+                      supplierName: selected?.fullName || ''
+                    });
+                  }}
+                >
+                  <option value="">Choose a supplier...</option>
+                  {suppliers.map(supplier => (
+                    <option key={supplier._id} value={supplier._id}>
+                      {supplier.fullName} - {supplier.department}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Quantity */}
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Quantity *</label>
+                <input
+                  type="number"
+                  style={styles.input}
+                  placeholder="Enter quantity"
+                  value={orderData.quantity}
+                  onChange={(e) => {
+                    setOrderData({ ...orderData, quantity: e.target.value });
+                    calcTotal(e.target.value, orderData.unitPrice);
+                  }}
+                />
+              </div>
+
+              {/* Unit Price */}
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Unit Price (KES) *</label>
+                <input
+                  type="number"
+                  style={styles.input}
+                  placeholder="Enter unit price"
+                  value={orderData.unitPrice}
+                  onChange={(e) => {
+                    setOrderData({ ...orderData, unitPrice: e.target.value });
+                    calcTotal(orderData.quantity, e.target.value);
+                  }}
+                />
+              </div>
+
+              {/* Total Display */}
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Total Cost</label>
+                <div style={styles.totalDisplay}>
+                  <IoCalculatorOutline size={24} color="#6200EE" />
+                  <span style={styles.totalText}>
+                    KES {parseFloat(orderData.totalCost || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div style={styles.modalFooter}>
+              <button style={styles.cancelBtn} onClick={() => { setOrderModal(false); resetOrderForm(); }}>Cancel</button>
+              <button
+                style={{
+                  ...styles.saveBtn,
+                  ...((!orderData.item || !orderData.supplier || !orderData.quantity || !orderData.unitPrice) && styles.disabled)
+                }}
+                onClick={createOrder}
+                disabled={!orderData.item || !orderData.supplier || !orderData.quantity || !orderData.unitPrice}
+              >
+                Place Order
+              </button>
+            </div>
           </div>
         </div>
-      </div>}
+      )}
     </div>
   );
 }
 
-// Add global keyframe animation for spinner (if not already present)
+// Global keyframe animation for spinner
 const styleSheet = document.createElement("style");
 styleSheet.innerText = `
   @keyframes spin {

@@ -39,11 +39,9 @@ const Dashboard = () => {
   const [updatingOrderStatus, setUpdatingOrderStatus] = useState(false);
   const [updatingPlayStatus, setUpdatingPlayStatus] = useState(false);
   const [generatingBulkReceipt, setGeneratingBulkReceipt] = useState(false);
-  const [deletingBookingId, setDeletingBookingId] = useState(null);
+  // Delete states for orders and plays remain
   const [deletingOrderId, setDeletingOrderId] = useState(null);
   const [deletingPlayId, setDeletingPlayId] = useState(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [bookingToDelete, setBookingToDelete] = useState(null);
   const [showOrderDeleteModal, setShowOrderDeleteModal] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState(null);
   const [showPlayDeleteModal, setShowPlayDeleteModal] = useState(false);
@@ -625,33 +623,6 @@ const Dashboard = () => {
     setShowBookingModal(true);
   };
 
-  const handleDeleteBooking = async () => {
-    if (!bookingToDelete) return;
-    
-    try {
-      setDeletingBookingId(bookingToDelete._id || bookingToDelete.id);
-      await axios.delete(`https://fanaka-server-1.onrender.com/api/bookings/${bookingToDelete._id || bookingToDelete.id}`);
-      
-      setBookings(prev => prev.filter(b => 
-        (b._id !== bookingToDelete._id) && (b.id !== bookingToDelete.id)
-      ));
-      
-      alert("Booking deleted successfully!");
-      setShowDeleteModal(false);
-      setBookingToDelete(null);
-    } catch (error) {
-      console.error("Error deleting booking:", error);
-      alert("Failed to delete booking");
-    } finally {
-      setDeletingBookingId(null);
-    }
-  };
-
-  const confirmDeleteBooking = (booking) => {
-    setBookingToDelete(booking);
-    setShowDeleteModal(true);
-  };
-
   const generateBulkReceipt = async () => {
     if (filteredBookings.length === 0) {
       alert("No bookings to generate receipt for!");
@@ -879,7 +850,7 @@ const Dashboard = () => {
                 
                 <div className="table-responsive">
                   <table className="table table-hover">
-                    <thead><tr><th>Booking ID</th><th>Customer</th><th>Play</th><th>Tickets</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Booking ID</th><th>Customer</th><th>Play</th><th>Tickets</th><th>Amount</th><th>Booking Status</th><th>Payment Status</th><th>Date</th><th>Actions</th></tr></thead>
                     <tbody>
                       {filteredBookings.length > 0 ? filteredBookings.map((booking) => (
                         <tr key={booking._id || booking.id}>
@@ -888,22 +859,22 @@ const Dashboard = () => {
                           <td>{booking.playTitle || "Unknown Play"}</td>
                           <td><span className="badge bg-info">{booking.quantity || 0} tickets</span></td>
                           <td><strong>KES {booking.totalPrice?.toLocaleString() || 0}</strong></td>
+                          <td>
+                            <span className={`badge ${
+                              booking.status === 'confirmed' ? 'bg-success' :
+                              booking.status === 'cancelled' ? 'bg-danger' :
+                              booking.status === 'checked_in' ? 'bg-info' :
+                              booking.status === 'completed' ? 'bg-primary' :
+                              'bg-warning'
+                            }`}>
+                              {booking.status || 'pending'}
+                            </span>
+                          </td>
                           <td><span className={`badge ${booking.paymentStatus === 'approved' ? 'bg-success' : booking.paymentStatus === 'pending' ? 'bg-warning' : booking.paymentStatus === 'rejected' ? 'bg-danger' : 'bg-secondary'}`}>{booking.paymentStatus?.toUpperCase() || 'PENDING'}</span></td>
                           <td><small>{new Date(booking.createdAt || booking.bookingDate).toLocaleDateString()}</small></td>
                           <td>
                             <div className="btn-group btn-group-sm">
                               <button className="btn btn-outline-primary" onClick={() => handleViewBooking(booking)}>View</button>
-                              <button 
-                                className="btn btn-outline-danger" 
-                                onClick={() => confirmDeleteBooking(booking)}
-                                disabled={deletingBookingId === (booking._id || booking.id)}
-                              >
-                                {deletingBookingId === (booking._id || booking.id) ? (
-                                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                ) : (
-                                  "Delete"
-                                )}
-                              </button>
                               {booking.paymentStatus === 'pending' && (
                                 <>
                                   <button className="btn btn-outline-success" onClick={() => updateBookingStatus(booking._id || booking.id, 'approved')} disabled={updatingStatus}>Approve</button>
@@ -914,7 +885,7 @@ const Dashboard = () => {
                           </td>
                         </tr>
                       )) : (
-                        <tr><td colSpan="8" className="text-center py-4"><div className="text-muted"><span className="display-4">🎭</span><h5>No bookings found</h5><p>No bookings match your criteria</p></div></td></tr>
+                        <tr><td colSpan="9" className="text-center py-4"><div className="text-muted"><span className="display-4">🎭</span><h5>No bookings found</h5><p>No bookings match your criteria</p></div></td></tr>
                       )}
                     </tbody>
                   </table>
@@ -948,65 +919,9 @@ const Dashboard = () => {
                       </div>
                       <div className="modal-footer">
                         <button type="button" className="btn btn-secondary" onClick={() => setShowBookingModal(false)}>Close</button>
-                        <button type="button" className="btn btn-danger" onClick={() => {
-                          setShowBookingModal(false);
-                          confirmDeleteBooking(selectedBooking);
-                        }}>Delete Booking</button>
                         <button type="button" className="btn btn-primary" onClick={generateBulkReceipt}>Generate Report</button>
                       </div>
                     </div></div>
-                  </div>
-                )}
-
-                {/* Delete Confirmation Modal */}
-                {showDeleteModal && bookingToDelete && (
-                  <div className="modal show d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                    <div className="modal-dialog modal-dialog-centered">
-                      <div className="modal-content">
-                        <div className="modal-header bg-danger text-white">
-                          <h5 className="modal-title">⚠️ Confirm Delete</h5>
-                          <button type="button" className="btn-close btn-close-white" onClick={() => setShowDeleteModal(false)}></button>
-                        </div>
-                        <div className="modal-body">
-                          <div className="alert alert-warning">
-                            <h6 className="alert-heading">Are you sure you want to delete this booking?</h6>
-                            <p className="mb-1"><strong>Booking ID:</strong> {bookingToDelete.bookingReference || bookingToDelete._id?.substring(0, 8)}</p>
-                            <p className="mb-1"><strong>Customer:</strong> {bookingToDelete.customerName}</p>
-                            <p className="mb-1"><strong>Play:</strong> {bookingToDelete.playTitle}</p>
-                            <p className="mb-1"><strong>Amount:</strong> KES {bookingToDelete.totalPrice?.toLocaleString() || 0}</p>
-                            <p className="mb-0"><strong>Status:</strong> {bookingToDelete.paymentStatus?.toUpperCase() || 'PENDING'}</p>
-                          </div>
-                          <div className="alert alert-danger mt-3">
-                            <small>⚠️ <strong>Warning:</strong> This action cannot be undone. All booking data will be permanently deleted.</small>
-                          </div>
-                        </div>
-                        <div className="modal-footer">
-                          <button 
-                            type="button" 
-                            className="btn btn-secondary" 
-                            onClick={() => setShowDeleteModal(false)}
-                            disabled={deletingBookingId}
-                          >
-                            Cancel
-                          </button>
-                          <button 
-                            type="button" 
-                            className="btn btn-danger" 
-                            onClick={handleDeleteBooking}
-                            disabled={deletingBookingId}
-                          >
-                            {deletingBookingId ? (
-                              <>
-                                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
-                                Deleting...
-                              </>
-                            ) : (
-                              'Yes, Delete Booking'
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 )}
               </>
@@ -1928,11 +1843,22 @@ const Dashboard = () => {
           <>
             <div className="row mb-4">
               <div className="col-4"><div className="card shadow-sm"><div className="card-header bg-white d-flex justify-content-between align-items-center"><h5 className="mb-0">📋 Recent Bookings</h5><button className="btn btn-sm btn-outline-primary" onClick={() => setTicketsDropdownOpen(true)}>Manage All</button></div><div className="card-body p-0">
-                {recentBookings.length > 0 ? (<div className="table-responsive"><table className="table table-hover mb-0"><thead className="table-light"><tr><th>Booking</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead><tbody>
+                {recentBookings.length > 0 ? (<div className="table-responsive"><table className="table table-hover mb-0"><thead className="table-light"><tr><th>Booking</th><th>Customer</th><th>Amount</th><th>Booking Status</th><th>Payment Status</th></tr></thead><tbody>
                   {recentBookings.map((booking) => (<tr key={booking._id || booking.id}>
                     <td><small>{booking.bookingReference || booking._id?.substring(0, 6)}</small></td>
                     <td>{booking.customerName || "N/A"}</td>
                     <td><strong>KES {booking.totalPrice?.toLocaleString() || 0}</strong></td>
+                    <td>
+                      <span className={`badge ${
+                        booking.status === 'confirmed' ? 'bg-success' :
+                        booking.status === 'cancelled' ? 'bg-danger' :
+                        booking.status === 'checked_in' ? 'bg-info' :
+                        booking.status === 'completed' ? 'bg-primary' :
+                        'bg-warning'
+                      }`}>
+                        {booking.status || 'pending'}
+                      </span>
+                    </td>
                     <td><span className={`badge ${booking.paymentStatus === 'approved' ? 'bg-success' : 'bg-warning'}`}>{booking.paymentStatus || 'pending'}</span></td>
                   </tr>))}
                 </tbody></table></div>) : (<div className="text-center py-4"><span className="display-4">🎭</span><h5>No bookings yet</h5></div>)}

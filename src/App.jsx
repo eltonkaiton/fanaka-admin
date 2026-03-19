@@ -94,12 +94,8 @@ const AudienceSidebar = () => {
   );
 };
 
-// PLAY MANAGER SIDEBAR (FIXED: now all links include /play-manager/)
+// PLAY MANAGER SIDEBAR (FIXED: now all links include /play-manager/, logout button removed)
 const PlayManagerSidebar = () => {
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = "/login";
-  };
   return (
     <div className="d-flex flex-column p-3 bg-light" style={{ width: "220px", minHeight: "100vh" }}>
       <h5>Play Manager</h5>
@@ -108,7 +104,6 @@ const PlayManagerSidebar = () => {
       <Link to="/play-manager/manage-plays" className="btn btn-link">Manage Plays</Link>
       <Link to="/play-manager/create-play" className="btn btn-link">Create Play</Link>
       <Link to="/play-manager/assign-actors" className="btn btn-link">Assign Actors</Link>
-      <button className="btn btn-danger mt-auto" onClick={handleLogout}>Logout</button>
     </div>
   );
 };

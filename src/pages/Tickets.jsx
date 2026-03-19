@@ -273,7 +273,8 @@ export default function Tickets() {
           </div>
         </div>
 
-        {item.paymentStatus === "pending" && (
+        {/* Show action buttons only if payment is pending AND booking is NOT cancelled */}
+        {item.paymentStatus === "pending" && item.status !== "cancelled" && (
           <div style={styles.actionButtons}>
             <button
               style={{ ...styles.actionButton, ...styles.approveButton }}
