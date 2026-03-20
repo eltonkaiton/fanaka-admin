@@ -12,9 +12,9 @@ function UserLogin() {
   const [showPassword, setShowPassword] = useState(false);
 
   const API_ENDPOINTS = {
-    audience: "https://fanaka-server-1.onrender.com/api/users/login",
-    employee: "https://fanaka-server-1.onrender.com/api/employees/login",
-    actor: "https://fanaka-server-1.onrender.com/api/actors/login",
+    audience: "http://localhost:5000/api/users/login",
+    employee: "http://localhost:5000/api/employees/login",
+    actor: "http://localhost:5000/api/actors/login",
   };
 
   const tryLogin = async (url) => {

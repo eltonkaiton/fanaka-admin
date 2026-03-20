@@ -24,7 +24,7 @@ const SuspendedUsers = () => {
   // Fetch suspended users
   const fetchSuspendedUsers = async () => {
     try {
-      const response = await fetch("https://fanaka-server-1.onrender.com/api/users");
+      const response = await fetch("http://localhost:5000/api/users");
       if (!response.ok) throw new Error("Failed to fetch users");
 
       const data = await response.json();
@@ -45,7 +45,7 @@ const SuspendedUsers = () => {
   // Update user status (Reactivate / Reject) — no token required
   const updateUserStatus = async (id, status) => {
     try {
-      const response = await fetch(`https://fanaka-server-1.onrender.com/api/users/${id}/status`, {
+      const response = await fetch(`http://localhost:5000/api/users/${id}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
@@ -67,7 +67,7 @@ const SuspendedUsers = () => {
   const deleteUser = async (id) => {
     showConfirm("Are you sure you want to delete this user?", async () => {
       try {
-        const response = await fetch(`https://fanaka-server-1.onrender.com/api/users/${id}`, {
+        const response = await fetch(`http://localhost:5000/api/users/${id}`, {
           method: "DELETE",
         });
         if (!response.ok) throw new Error("Failed to delete user");

@@ -37,7 +37,7 @@ const AddActor = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post("https://fanaka-server-1.onrender.com/api/actors", actor);
+      await axios.post("http://localhost:5000/api/actors", actor);
       showToast("Actor added successfully!", "success");
       setLoading(false);
       setTimeout(() => navigate("/actors"), 1500); // Delay to show toast

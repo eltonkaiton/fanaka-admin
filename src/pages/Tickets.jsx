@@ -24,7 +24,7 @@ import {
   IoClose,
 } from "react-icons/io5";
 
-const API_BASE_URL = "https://fanaka-server-1.onrender.com";
+const API_BASE_URL = "http://localhost:5000";
 
 export default function Tickets() {
   const [loading, setLoading] = useState(true);
@@ -273,8 +273,8 @@ export default function Tickets() {
           </div>
         </div>
 
-        {/* Show action buttons only if payment is pending AND booking is NOT cancelled */}
-        {item.paymentStatus === "pending" && item.status !== "cancelled" && (
+        {/* Show action buttons only if payment is pending (regardless of booking status) */}
+        {item.paymentStatus === "pending" && (
           <div style={styles.actionButtons}>
             <button
               style={{ ...styles.actionButton, ...styles.approveButton }}

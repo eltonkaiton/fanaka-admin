@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: "https://fanaka-server-1.onrender.com
+  baseURL: "http://localhost:5000
 /api",
 });
 

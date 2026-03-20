@@ -21,7 +21,7 @@ const EditEmployee = () => {
   useEffect(() => {
     const fetchEmployee = async () => {
       try {
-        const res = await fetch(`https://fanaka-server-1.onrender.com/api/employees/${id}`);
+        const res = await fetch(`http://localhost:5000/api/employees/${id}`);
         if (!res.ok) {
           alert("Employee not found");
           navigate("/employees");
@@ -51,7 +51,7 @@ const EditEmployee = () => {
     e.preventDefault();
 
     try {
-      const res = await fetch(`https://fanaka-server-1.onrender.com/api/employees/${id}`, {
+      const res = await fetch(`http://localhost:5000/api/employees/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(employee),

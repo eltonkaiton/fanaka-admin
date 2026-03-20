@@ -8,7 +8,7 @@ import {
   IoPeopleOutline,
 } from 'react-icons/io5';
 
-const API_BASE_URL = 'https://fanaka-server-1.onrender.com';
+const API_BASE_URL = 'http://localhost:5000';
 
 export default function Home() {
   const navigate = useNavigate();

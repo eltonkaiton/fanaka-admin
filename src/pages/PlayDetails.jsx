@@ -1,5 +1,5 @@
 import React,{useEffect,useState}from'react';import{useParams,useNavigate}from'react-router-dom';import axios from'axios';import{IoCalendarOutline,IoLocationOutline,IoTimeOutline,IoPeopleOutline,IoInformationCircleOutline,IoFilmOutline,IoClose,IoPerson,IoMail,IoCall,IoRemove,IoAdd,IoChevronUp,IoChevronDown,IoStar,IoDiamond,IoCheckmarkCircle,IoArrowForward,IoPhonePortrait,IoCard,IoCash}from'react-icons/io5';
-const API='https://fanaka-server-1.onrender.com';
+const API='http://localhost:5000';
 export default function PlayDetails(){
   const{id}=useParams();const n=useNavigate();
   const[p,setP]=useState(null);const[l,setL]=useState(true);const[bM,setBM]=useState(false);const[payM,setPayM]=useState(false);const[proc,setProc]=useState(false);
