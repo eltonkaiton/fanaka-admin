@@ -12,10 +12,10 @@ const Login = () => {
 
   // All possible login endpoints
   const endpoints = {
-    admin: "http://localhost:5000/api/admin/login",
-    audience: "http://localhost:5000/api/users/login",
-    employee: "http://localhost:5000/api/employees/login",
-    actor: "http://localhost:5000/api/actors/login",
+    admin: "https://fanaka-server-1.onrender.com/api/admin/login",
+    audience: "https://fanaka-server-1.onrender.com/api/users/login",
+    employee: "https://fanaka-server-1.onrender.com/api/employees/login",
+    actor: "https://fanaka-server-1.onrender.com/api/actors/login",
   };
 
   const handleChange = (e) => {

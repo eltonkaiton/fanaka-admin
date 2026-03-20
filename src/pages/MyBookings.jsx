@@ -10,7 +10,7 @@ import {
 } from 'react-icons/io5';
 import { QRCodeCanvas } from 'qrcode.react';
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://fanaka-server-1.onrender.com';
 
 export default function MyBookings() {
   const navigate = useNavigate();

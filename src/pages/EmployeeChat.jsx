@@ -4,8 +4,8 @@ import axios from 'axios';
 import { io } from 'socket.io-client';
 import { IoArrowBack, IoSend } from 'react-icons/io5';
 
-const API_BASE_URL = 'http://localhost:5000';
-const SOCKET_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://fanaka-server-1.onrender.com';
+const SOCKET_URL = 'https://fanaka-server-1.onrender.com';
 
 export default function EmployeeChat() {
   const navigate = useNavigate();

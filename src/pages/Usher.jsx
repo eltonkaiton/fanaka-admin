@@ -67,7 +67,7 @@ export default function Usher() {
     try {
       const token = localStorage.getItem('token');
       const today = new Date().toISOString().split('T')[0];
-      const response = await axios.get(`http://localhost:5000/api/bookings?date=${today}&status=confirmed`, {
+      const response = await axios.get(`https://fanaka-server-1.onrender.com/api/bookings?date=${today}&status=confirmed`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) setTodayBookings(response.data.bookings);
@@ -80,7 +80,7 @@ export default function Usher() {
   const fetchAllBookings = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/bookings', {
+      const response = await axios.get('https://fanaka-server-1.onrender.com/api/bookings', {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) setAllBookings(response.data.bookings);
@@ -111,7 +111,7 @@ export default function Usher() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:5000/api/bookings/verify/${bookingRef}`, {
+      const response = await axios.get(`https://fanaka-server-1.onrender.com/api/bookings/verify/${bookingRef}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {
@@ -132,7 +132,7 @@ export default function Usher() {
     if (!bookingData) return;
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.put(`http://localhost:5000/api/bookings/${bookingData.id}/checkin`, {}, {
+      const response = await axios.put(`https://fanaka-server-1.onrender.com/api/bookings/${bookingData.id}/checkin`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data.success) {

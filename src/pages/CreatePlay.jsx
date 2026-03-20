@@ -89,7 +89,7 @@ export default function CreatePlay() {
 
     try {
       setLoading(true);
-      const API_URL = "http://localhost:5000/api/plays";
+      const API_URL = "https://fanaka-server-1.onrender.com/api/plays";
 
       const formData = new FormData();
       formData.append("title", title.trim());

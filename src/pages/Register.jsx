@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = "https://fanaka-server-1.onrender.com";
 
 export default function Register() {
   const navigate = useNavigate();

@@ -51,7 +51,7 @@ styleSheet.innerText = `
 `;
 document.head.appendChild(styleSheet);
 
-const API_BASE_URL = "http://localhost:5000";
+const API_BASE_URL = "https://fanaka-server-1.onrender.com";
 
 export default function FinanceOrders() {
   const [loading, setLoading] = useState(true);
