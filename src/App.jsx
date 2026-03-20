@@ -1,5 +1,5 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
@@ -73,9 +73,11 @@ const ProtectedRoute = ({ children }) => {
 
 // AUDIENCE SIDEBAR (FIXED)
 const AudienceSidebar = () => {
+  const navigate = useNavigate();
+
   const handleLogout = () => {
     localStorage.clear();
-    window.location.href = "/login";
+    navigate("/login");
   };
 
   return (
